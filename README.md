@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The 11 Professional Family Salon
+
+Welcome to the official repository for **The 11 Professional Family Salon**. This is a premium, full-stack web application built to serve as a luxurious digital storefront and an advanced business management dashboard for the salon.
+
+## Core Features
+
+- **Public Storefront:** A fully responsive, beautifully designed UI for showcasing salon services, a dynamic photo gallery, customer testimonials, and an interactive booking system.
+- **Admin Dashboard:** A secured management portal to handle all daily salon operations.
+- **Appointment Management:** Real-time scheduling, waitlist tracking, and status updates (Pending, Booked, Checked-in, Completed).
+- **Billing & Invoicing:** Integrated automated invoice generation with custom PDF downloads.
+- **Customer CRM:** Track client visits, manage memberships, and automatically receive alerts for upcoming customer birthdays or expiring memberships.
+- **Staff & Service Management:** Easily add new services, adjust pricing, and track staff schedules and performance.
+
+## Tech Stack
+
+- **Frontend:** Next.js (App Router), React, Tailwind CSS, Framer Motion
+- **Backend:** Next.js API Routes, NextAuth for secure admin authentication
+- **Database:** PostgreSQL (managed via Prisma ORM)
+- **Deployment:** Vercel (Recommended)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Ensure you have Node.js (v18+) and npm installed on your machine. You will also need access to a PostgreSQL database connection string.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/satyajeet9793/the11salon.git
+   cd the11salon
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-## Learn More
+3. **Configure Environment Variables:**
+   Create a `.env` file in the root directory and add your database and authentication credentials:
+   ```env
+   DATABASE_URL="your-postgres-url"
+   DIRECT_URL="your-direct-postgres-url"
+   NEXTAUTH_SECRET="a-secure-random-string"
+   NEXTAUTH_URL="http://localhost:3000"
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Initialize the Database:**
+   Push the schema to your database to set up all tables:
+   ```bash
+   npx prisma db push
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. **Run the Development Server:**
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the live public site. 
+The admin portal is securely accessible via `/admin/login`.
 
-## Deploy on Vercel
+## Contact & Support
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For any technical queries or deployment assistance, please refer to the internal development team documentation or contact the repository administrator.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Designed & developed exclusively for The 11 Professional Family Salon.*
