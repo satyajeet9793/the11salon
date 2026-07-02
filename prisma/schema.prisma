@@ -1,0 +1,186 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Customer {
+  id                  String   @id @default(cuid())
+  name                String
+  phone               String   @unique
+  email               String?
+  gender              String?
+  dob                 DateTime?
+  address             String?
+  visitCount          Int      @default(0)
+  notes               String?
+  
+  // Membership Fields
+  isMember            Boolean  @default(false)
+  membershipStartDate DateTime?
+  membershipEndDate   DateTime?
+  membershipYears     Int?
+  
+  appointments        Appointment[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Service {
+  id            String   @id @default(cuid())
+  name          String
+  category      String
+  description   String?
+  price         Float
+  duration      Int      // duration in minutes
+  benefits      String?  // comma separated or JSON string
+  imageUrl      String?
+  appointments  Appointment[]
+  waitlists     Waitlist[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Staff {
+  id            String   @id @default(cuid())
+  name          String
+  role          String
+  phone         String?
+  salary        Float?
+  joiningDate   DateTime?
+  skills        String?  // comma separated
+  imageUrl      String?
+  isAvailable   Boolean  @default(true)
+  appointments  Appointment[]
+  waitlists     Waitlist[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Appointment {
+  id            String   @id @default(cuid())
+  date          DateTime
+  timeSlot      String   // e.g. "10:00 AM"
+  duration      Int      @default(60)
+  status        String   @default("PENDING") // PENDING, BOOKED, CHECKED_IN, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+  notes         String?
+  
+  arrivalTime   DateTime?
+  serviceStartTime DateTime?
+  serviceEndTime DateTime?
+  
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  staffId       String?
+  staff         Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  
+  payment       Payment?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  amount            Float
+  status            String   @default("PENDING") // PENDING, PAID, REFUNDED
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  method            String   @default("CASH") // CASH, UPI, CARD
+  invoiceUrl        String?
+  
+  appointmentId     String   @unique
+  appointment       Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Testimonial {
+  id            String   @id @default(cuid())
+  customerName  String
+  rating        Int
+  text          String
+  isFeatured    Boolean  @default(false)
+  videoUrl      String?
+  approved      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model GalleryItem {
+  id              String   @id @default(cuid())
+  imageUrl        String
+  category        String
+  beforeImageUrl  String?
+  afterImageUrl   String?
+  isTransformation Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Notification {
+  id            String   @id @default(cuid())
+  type          String   // WHATSAPP
+  recipient     String
+  content       String
+  status        String   @default("PENDING") // PENDING, SENT, FAILED
+  sentAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Settings {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  email     String?
+  date      DateTime
+  
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  staffId   String?
+  staff     Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  
+  status    String   @default("WAITING") // WAITING, NOTIFIED, COMPLETED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

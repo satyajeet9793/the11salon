@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-amber-50: #fdf8f0;
+  --color-amber-100: #f8ebd5;
+  --color-amber-200: #f0d3a9;
+  --color-amber-300: #e7b678;
+  --color-amber-400: #dd9546;
+  --color-amber-500: #c4791b;
+  --color-amber-600: #ab6015;
+  --color-amber-700: #8f4913;
+  --color-amber-800: #733912;
+  --color-amber-900: #5d3011;
+  --color-amber-950: #331606;
+
+  --color-gold: #dd9546;
+  --color-gold-dark: #ab6015;
+  --color-bronze: #c4791b;
+  --color-cream: #f7eed4;
+  --color-beige: #f0e4c6;
+  --color-brown-dark: #331606;
+  --color-brown-light: #5d3011;
+  --color-ochre: #c4791b;
+  
+  --color-background: var(--color-cream);
+  --color-foreground: var(--color-brown-dark);
+
+  --font-sans: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+}
+
+@layer base {
+  :root {
+    --background: var(--color-cream);
+    --foreground: var(--color-brown-dark);
+  }
+
+  body {
+    background-color: var(--background);
+    background-image: url('/images/bg-swirls.svg'), url('/images/bg-swirls.svg');
+    background-attachment: fixed, fixed;
+    background-position: top left, bottom right;
+    background-repeat: no-repeat, no-repeat;
+    background-size: 45vw auto, 45vw auto;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    color: var(--color-ochre) !important;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-cream);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-gold);
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-cream/80 backdrop-blur-md border border-brown-dark/5;
+  }
+  .glass-card {
+    @apply bg-beige/90 backdrop-blur-md border border-brown-dark/5 shadow-md;
+  }
+}
