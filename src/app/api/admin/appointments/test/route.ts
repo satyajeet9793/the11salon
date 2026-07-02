@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -34,3 +35,4 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ date, whereClause, count: appointments.length, appointments });
 }
+

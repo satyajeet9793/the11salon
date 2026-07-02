@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -47,3 +48,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
   }
 }
+
