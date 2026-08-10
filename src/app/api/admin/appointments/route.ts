@@ -13,19 +13,28 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const date = searchParams.get('date');
+    const customerId = searchParams.get('customerId');
+    const staffId = searchParams.get('staffId');
 
-    let whereClause = {};
+    let whereClause: any = {};
+    
     if (date) {
       const parsedDate = new Date(date);
       const startOfDay = new Date(parsedDate.setHours(0, 0, 0, 0));
       const endOfDay = new Date(parsedDate.setHours(23, 59, 59, 999));
       
-      whereClause = {
-        date: {
-          gte: startOfDay,
-          lte: endOfDay
-        }
+      whereClause.date = {
+        gte: startOfDay,
+        lte: endOfDay
       };
+    }
+    
+    if (customerId) {
+      whereClause.customerId = customerId;
+    }
+    
+    if (staffId) {
+      whereClause.staffId = staffId;
     }
 
     const appointments = await prisma.appointment.findMany({

@@ -8,6 +8,27 @@ export default function StaffPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [historyModal, setHistoryModal] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [staffHistory, setStaffHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const openHistoryModal = async (member: any) => {
+    setSelectedStaff(member);
+    setHistoryModal(true);
+    setLoadingHistory(true);
+    try {
+      const res = await fetch(`/api/admin/appointments?staffId=${member.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStaffHistory(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch staff history", error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: "",
@@ -137,14 +158,23 @@ export default function StaffPage() {
                 {/* Actions (visible on hover) */}
                 <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button 
+                    onClick={() => openHistoryModal(member)}
+                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-neutral-600 hover:text-amber-600 hover:bg-amber-50 shadow-sm border border-neutral-100 transition-colors"
+                    title="View History"
+                  >
+                    <Calendar className="h-4 w-4" />
+                  </button>
+                  <button 
                     onClick={() => openEditModal(member)}
                     className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-neutral-600 hover:text-blue-600 hover:bg-blue-50 shadow-sm border border-neutral-100 transition-colors"
+                    title="Edit"
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button 
                     onClick={() => handleDelete(member.id, member.name)}
                     className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-neutral-600 hover:text-red-600 hover:bg-red-50 shadow-sm border border-neutral-100 transition-colors"
+                    title="Delete"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -187,6 +217,14 @@ export default function StaffPage() {
                     </p>
                   </div>
                 </div>
+                
+                <button 
+                  onClick={() => openHistoryModal(member)}
+                  className="mt-4 w-full py-2.5 bg-neutral-900 text-white hover:bg-amber-600 rounded-xl font-medium text-sm transition-colors shadow-sm flex items-center justify-center gap-2 group-hover:shadow-md"
+                >
+                  <Calendar className="h-4 w-4" />
+                  View Service History
+                </button>
               </div>
             </div>
           ))
@@ -290,6 +328,63 @@ export default function StaffPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {historyModal && selectedStaff && (
+        <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-3xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-neutral-900">{selectedStaff.name}'s Service History</h2>
+                <p className="text-sm text-neutral-500">{selectedStaff.role} • {staffHistory.length} total services</p>
+              </div>
+              <button onClick={() => setHistoryModal(false)} className="text-neutral-400 hover:text-neutral-600">✕</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {loadingHistory ? (
+                <div className="py-8 text-center text-neutral-500">Loading history...</div>
+              ) : staffHistory.length === 0 ? (
+                <div className="py-8 text-center text-neutral-500">No past services found.</div>
+              ) : (
+                <div className="space-y-4">
+                  {staffHistory.map((apt: any) => (
+                    <div key={apt.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                      <div className="flex gap-4">
+                        <div className="bg-white border border-neutral-200 rounded-lg p-3 flex flex-col items-center justify-center min-w-[70px]">
+                          <span className="text-xs text-neutral-500 uppercase font-semibold">{new Date(apt.date).toLocaleDateString('en-US', { month: 'short' })}</span>
+                          <span className="text-xl font-bold text-neutral-900">{new Date(apt.date).getDate()}</span>
+                          <span className="text-xs text-neutral-500">{new Date(apt.date).getFullYear()}</span>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-neutral-900">{apt.service?.name || "Service"}</span>
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-200 text-neutral-700">{apt.status}</span>
+                          </div>
+                          <div className="text-sm text-neutral-600 flex flex-col gap-1">
+                            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {apt.timeSlot} ({apt.duration} mins)</span>
+                            <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /> Customer: {apt.customer?.name || "Unknown"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right w-full sm:w-auto">
+                        <div className="font-bold text-neutral-900">₹{apt.customPrice ?? apt.service?.price}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 py-4 border-t border-neutral-200 bg-neutral-50 flex justify-end">
+              <button 
+                onClick={() => setHistoryModal(false)}
+                className="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

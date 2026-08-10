@@ -9,6 +9,27 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [historyModal, setHistoryModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [customerHistory, setCustomerHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const openHistoryModal = async (customer: any) => {
+    setSelectedCustomer(customer);
+    setHistoryModal(true);
+    setLoadingHistory(true);
+    try {
+      const res = await fetch(`/api/admin/appointments?customerId=${customer.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCustomerHistory(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch customer history", error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -186,7 +207,10 @@ export default function CustomersPage() {
                         : 'Never'}
                     </td>
                     <td className="px-6 py-4 text-right flex justify-end items-center gap-3">
-                      <button className="text-amber-600 hover:text-amber-700 font-medium text-sm transition-colors">
+                      <button 
+                        onClick={() => openHistoryModal(customer)}
+                        className="text-amber-600 hover:text-amber-700 font-medium text-sm transition-colors"
+                      >
                         View History
                       </button>
                       <button 
@@ -306,6 +330,64 @@ export default function CustomersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {historyModal && selectedCustomer && (
+        <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-3xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-neutral-900">{selectedCustomer.name}'s History</h2>
+                <p className="text-sm text-neutral-500">{selectedCustomer.phone} • {selectedCustomer.visitCount} total visits</p>
+              </div>
+              <button onClick={() => setHistoryModal(false)} className="text-neutral-400 hover:text-neutral-600">✕</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {loadingHistory ? (
+                <div className="py-8 text-center text-neutral-500">Loading history...</div>
+              ) : customerHistory.length === 0 ? (
+                <div className="py-8 text-center text-neutral-500">No past appointments found.</div>
+              ) : (
+                <div className="space-y-4">
+                  {customerHistory.map((apt: any) => (
+                    <div key={apt.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                      <div className="flex gap-4">
+                        <div className="bg-white border border-neutral-200 rounded-lg p-3 flex flex-col items-center justify-center min-w-[70px]">
+                          <span className="text-xs text-neutral-500 uppercase font-semibold">{new Date(apt.date).toLocaleDateString('en-US', { month: 'short' })}</span>
+                          <span className="text-xl font-bold text-neutral-900">{new Date(apt.date).getDate()}</span>
+                          <span className="text-xs text-neutral-500">{new Date(apt.date).getFullYear()}</span>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-neutral-900">{apt.service?.name || "Service"}</span>
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-200 text-neutral-700">{apt.status}</span>
+                          </div>
+                          <div className="text-sm text-neutral-600 flex flex-col gap-1">
+                            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {apt.timeSlot} ({apt.duration} mins)</span>
+                            <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Stylist: {apt.staff?.name || "Any"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right w-full sm:w-auto">
+                        <div className="font-bold text-neutral-900">₹{apt.customPrice ?? apt.service?.price}</div>
+                        {apt.notes && <div className="text-xs text-neutral-500 mt-1 max-w-[200px] truncate" title={apt.notes}>Note: {apt.notes}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 py-4 border-t border-neutral-200 bg-neutral-50 flex justify-end">
+              <button 
+                onClick={() => setHistoryModal(false)}
+                className="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
