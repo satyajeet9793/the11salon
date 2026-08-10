@@ -105,7 +105,10 @@ export default function DashboardPage() {
     setIsDrillDownLoading(true);
 
     try {
-      const res = await fetch(`/api/admin/dashboard/details?timeSpan=${timeSpan}`);
+      const query = timeSpan === 'custom' && customDate 
+        ? `timeSpan=custom&date=${customDate}`
+        : `timeSpan=${timeSpan}`;
+      const res = await fetch(`/api/admin/dashboard/details?${query}`);
       if (res.ok) {
         const details = await res.json();
         setDrillDownData(details);

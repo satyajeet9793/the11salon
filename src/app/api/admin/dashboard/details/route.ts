@@ -32,6 +32,11 @@ export async function GET(req: NextRequest) {
         startDate = startOfDay(subDays(now, 29));
       } else if (timeSpan === '6months') {
         startDate = startOfMonth(subMonths(now, 5));
+      } else if (timeSpan === 'custom') {
+        const customDateParam = searchParams.get('date');
+        const customDate = customDateParam ? new Date(customDateParam) : now;
+        startDate = startOfDay(customDate);
+        endDate = endOfDay(customDate);
       } else {
         startDate = startOfDay(now); // today
       }
