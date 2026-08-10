@@ -49,14 +49,7 @@ export default function DashboardPage() {
   const fetchDashboard = async () => {
     setStats(prev => ({ ...prev, loading: true }));
     try {
-      const timestamp = new Date().getTime();
-      const res = await fetch(`/api/admin/dashboard?timeSpan=${timeSpan}&_t=${timestamp}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      const res = await fetch(`/api/admin/dashboard?timeSpan=${timeSpan}`);
       if (res.ok) {
         const data = await res.json();
         setStats({
