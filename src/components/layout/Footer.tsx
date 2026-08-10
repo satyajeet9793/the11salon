@@ -19,7 +19,7 @@ export default async function Footer() {
 
   const phone = settingsObject.phone || "+91 74474 88880";
   const email = settingsObject.email || "the11.kolhapur@gmail.com";
-  const address = settingsObject.address || "Kolhapur, Maharashtra, India";
+  const address = settingsObject.address || "near Medplus The 11 Salon, Poorvarang, Mahalaxminagar, Rajarampuri, Kolhapur, Maharashtra 416008, India";
   
   // Default hours fallback
   let businessHours = [
@@ -64,7 +64,7 @@ export default async function Footer() {
               <a href={`https://wa.me/${phoneLink.replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-brown-dark/5 flex items-center justify-center text-brown-dark hover:bg-[#25D366] hover:text-white transition-all">
                 <FaWhatsapp size={20} />
               </a>
-              <a href="https://www.google.com/maps/search/The+11+Takala+Chowk+Kolhapur" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-brown-dark/5 flex items-center justify-center text-brown-dark hover:bg-[#EA4335] hover:text-white transition-all">
+              <a href="https://www.google.com/maps/dir/?api=1&destination=near+Medplus+The+11+Salon,+Poorvarang,+Mahalaxminagar,+Rajarampuri,+Kolhapur,+Maharashtra+416008,+India" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-brown-dark/5 flex items-center justify-center text-brown-dark hover:bg-[#EA4335] hover:text-white transition-all">
                 <FaMapMarkerAlt size={20} />
               </a>
             </div>
@@ -90,7 +90,7 @@ export default async function Footer() {
             <ul className="space-y-4 text-brown-light font-medium">
               <li className="flex items-start gap-3">
                 <MapPin className="text-gold shrink-0 mt-1" size={18} />
-                <a href="https://www.google.com/maps/search/The+11+Takala+Chowk+Kolhapur" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">
+                <a href="https://www.google.com/maps/dir/?api=1&destination=near+Medplus+The+11+Salon,+Poorvarang,+Mahalaxminagar,+Rajarampuri,+Kolhapur,+Maharashtra+416008,+India" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">
                   {address}
                 </a>
               </li>

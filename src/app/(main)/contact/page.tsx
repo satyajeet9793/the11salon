@@ -32,9 +32,10 @@ export default function ContactPage() {
               <div>
                 <h4 className="text-xl text-[#CE8118] mb-1 font-serif font-bold">Location</h4>
                 <p className="text-brown-light font-medium leading-relaxed">
-                  <a href="https://www.google.com/maps/search/The+11+Takala+Chowk+Kolhapur" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">
-                    Kolhapur,<br />
-                    Maharashtra, India
+                  <a href="https://www.google.com/maps/dir/?api=1&destination=near+Medplus+The+11+Salon,+Poorvarang,+Mahalaxminagar,+Rajarampuri,+Kolhapur,+Maharashtra+416008,+India" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">
+                    near Medplus The 11 Salon, Poorvarang,<br />
+                    Mahalaxminagar, Rajarampuri, Kolhapur,<br />
+                    Maharashtra 416008, India
                   </a>
                 </p>
               </div>
@@ -84,7 +85,7 @@ export default function ContactPage() {
                 <a href="https://wa.me/917447488880" target="_blank" rel="noopener noreferrer" className="h-12 w-12 bg-[#25D366] rounded-full flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform">
                   <FaWhatsapp size={24} />
                 </a>
-                <a href="https://www.google.com/maps/search/The+11+Takala+Chowk+Kolhapur" target="_blank" rel="noopener noreferrer" className="h-12 w-12 bg-[#EA4335] rounded-full flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform">
+                <a href="https://www.google.com/maps/dir/?api=1&destination=near+Medplus+The+11+Salon,+Poorvarang,+Mahalaxminagar,+Rajarampuri,+Kolhapur,+Maharashtra+416008,+India" target="_blank" rel="noopener noreferrer" className="h-12 w-12 bg-[#EA4335] rounded-full flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform">
                   <FaMapMarkerAlt size={24} />
                 </a>
               </div>
@@ -126,7 +127,7 @@ export default function ContactPage() {
       {/* Map */}
       <div className="w-full h-96 bg-beige relative z-10 border-t border-brown-dark/10">
         <iframe
-          src="https://maps.google.com/maps?q=The+11+Takala+Chowk+Kolhapur&t=&z=15&ie=UTF8&iwloc=&output=embed"
+          src="https://maps.google.com/maps?q=near+Medplus+The+11+Salon,+Poorvarang,+Mahalaxminagar,+Rajarampuri,+Kolhapur,+Maharashtra+416008,+India&t=&z=15&ie=UTF8&iwloc=&output=embed"
           width="100%"
           height="100%"
           style={{ border: 0 }}
