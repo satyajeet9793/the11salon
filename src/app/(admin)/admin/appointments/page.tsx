@@ -410,14 +410,24 @@ export default function AppointmentsPage() {
                         </div>
                       )}
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-neutral-700">Name *</label>
-                      <input 
-                        type="text" required
-                        placeholder="Customer name"
-                        value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})}
-                        className="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
-                      />
+                    <div className="space-y-1.5 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-neutral-700">Name *</label>
+                        <input 
+                          type="text" required
+                          placeholder="Customer name"
+                          value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})}
+                          className="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-neutral-700">Birth Date (Optional)</label>
+                        <input 
+                          type="date"
+                          value={formData.customerDob} onChange={e => setFormData({...formData, customerDob: e.target.value})}
+                          className="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
