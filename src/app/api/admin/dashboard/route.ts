@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const timeSpan = searchParams.get('timeSpan') || 'today'; // today, week, month, 6months
+    const timeSpan = searchParams.get('timeSpan') || 'today'; // today, week, month, 6months, custom
+    const customDateParam = searchParams.get('date');
 
     const now = new Date();
     let startDate = startOfDay(now);
@@ -26,6 +27,10 @@ export async function GET(req: NextRequest) {
       startDate = startOfDay(subDays(now, 29)); // Last 30 days
     } else if (timeSpan === '6months') {
       startDate = startOfMonth(subMonths(now, 5)); // Last 6 months
+    } else if (timeSpan === 'custom' && customDateParam) {
+      const customDate = new Date(customDateParam);
+      startDate = startOfDay(customDate);
+      endDate = endOfDay(customDate);
     }
 
     // 1. New Customers
@@ -105,9 +110,10 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    if (timeSpan === 'today') {
+    if (timeSpan === 'today' || timeSpan === 'custom') {
       // Group by working hours (e.g., 9 AM to 9 PM)
-      const hours = eachHourOfInterval({ start: setHours(now, 9), end: setHours(now, 21) });
+      const baseDate = timeSpan === 'custom' && customDateParam ? new Date(customDateParam) : now;
+      const hours = eachHourOfInterval({ start: setHours(baseDate, 9), end: setHours(baseDate, 21) });
       hours.forEach(hour => {
         const hourStart = hour;
         const hourEnd = new Date(hour.getTime() + 60 * 60 * 1000 - 1);

@@ -28,6 +28,7 @@ import Link from "next/link";
 
 export default function DashboardPage() {
   const [timeSpan, setTimeSpan] = useState('today');
+  const [customDate, setCustomDate] = useState("");
   const [stats, setStats] = useState({
     revenue: 0,
     customers: 0,
@@ -49,7 +50,10 @@ export default function DashboardPage() {
   const fetchDashboard = async () => {
     setStats(prev => ({ ...prev, loading: true }));
     try {
-      const res = await fetch(`/api/admin/dashboard?timeSpan=${timeSpan}`);
+      const query = timeSpan === 'custom' && customDate 
+        ? `timeSpan=custom&date=${customDate}`
+        : `timeSpan=${timeSpan}`;
+      const res = await fetch(`/api/admin/dashboard?${query}`);
       if (res.ok) {
         const data = await res.json();
         setStats({
@@ -64,8 +68,10 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchDashboard();
-  }, [timeSpan]);
+    if (timeSpan !== 'custom' || (timeSpan === 'custom' && customDate)) {
+      fetchDashboard();
+    }
+  }, [timeSpan, customDate]);
 
   // Click handler for Charts (Specific Time Range)
   const handleChartClick = async (data: any, type: 'REVENUE' | 'COMPLETED') => {
@@ -151,7 +157,8 @@ export default function DashboardPage() {
     today: "Today",
     week: "This Week",
     month: "This Month",
-    '6months': "Last 6 Months"
+    '6months': "Last 6 Months",
+    custom: "Custom Date"
   };
 
   return (
@@ -162,20 +169,34 @@ export default function DashboardPage() {
           <p className="text-neutral-500 mt-1">Welcome back. Here's what's happening {timeSpanLabels[timeSpan].toLowerCase()}.</p>
         </div>
         
-        <div className="bg-white border border-neutral-200 rounded-lg shadow-sm flex overflow-hidden">
-          {['today', 'week', 'month', '6months'].map((span) => (
-            <button
-              key={span}
-              onClick={() => setTimeSpan(span)}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                timeSpan === span 
-                  ? 'bg-amber-500 text-white' 
-                  : 'text-neutral-600 hover:bg-neutral-50'
-              } ${span !== '6months' ? 'border-r border-neutral-200' : ''}`}
-            >
-              {timeSpanLabels[span]}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="bg-white border border-neutral-200 rounded-lg shadow-sm flex overflow-hidden">
+            {['today', 'week', 'month', '6months'].map((span) => (
+              <button
+                key={span}
+                onClick={() => setTimeSpan(span)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  timeSpan === span 
+                    ? 'bg-amber-500 text-white' 
+                    : 'text-neutral-600 hover:bg-neutral-50'
+                } ${span !== '6months' ? 'border-r border-neutral-200' : ''}`}
+              >
+                {timeSpanLabels[span]}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <input 
+              type="date"
+              value={customDate}
+              onChange={(e) => {
+                setCustomDate(e.target.value);
+                if (e.target.value) setTimeSpan('custom');
+              }}
+              className={`px-3 py-2 text-sm font-medium border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-colors ${timeSpan === 'custom' ? 'border-amber-500 bg-amber-500 text-white' : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'}`}
+              title="Select Custom Date"
+            />
+          </div>
         </div>
       </div>
 
