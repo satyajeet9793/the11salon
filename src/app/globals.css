@@ -44,14 +44,14 @@
   }
 
   .dark {
-    --theme-gold: #e7b678;
-    --theme-gold-dark: #c4791b;
-    --theme-bronze: #e7b678;
-    --theme-cream: #120b06;
-    --theme-beige: #1a1008;
-    --theme-brown-dark: #f5eedc;
-    --theme-brown-light: #d6ba94;
-    --theme-ochre: #dd9546;
+    --theme-gold: #FCD34D; /* Lighter gold for pop */
+    --theme-gold-dark: #D97706;
+    --theme-bronze: #F59E0B;
+    --theme-cream: #1C1917; /* Warm dark stone (softer than black) */
+    --theme-beige: #292524; /* Slightly lighter stone for cards */
+    --theme-brown-dark: #FAFAF9; /* Off-white for high contrast text */
+    --theme-brown-light: #D6D3D1; /* Light grey for secondary text */
+    --theme-ochre: #FBBF24; /* Bright gold for headings */
     --theme-background: var(--theme-cream);
     --theme-foreground: var(--theme-brown-dark);
   }
