@@ -199,7 +199,7 @@ export default function BookingPage() {
                         className={`min-w-[80px] p-4 text-center rounded-lg cursor-pointer border transition-all shadow-sm ${
                           formData.date === dateStr 
                             ? 'bg-gold border-gold text-cream font-bold' 
-                            : 'bg-white dark:bg-neutral-800 border-brown-dark/5 text-brown-dark dark:text-neutral-300 hover:border-gold/30'
+                            : 'bg-white dark:bg-neutral-800 border-brown-dark/5 text-brown-dark hover:border-gold/30'
                         }`}
                       >
                         <div className="text-xs uppercase font-bold text-brown-light dark:text-neutral-400">{monStr}</div>
@@ -221,15 +221,15 @@ export default function BookingPage() {
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                       {availableSlots.map(slot => (
-                        <button
+                        <button 
                           key={slot.time}
                           disabled={!slot.available}
                           onClick={() => setFormData({ ...formData, time: slot.time })}
-                          className={`p-4 rounded border text-center font-bold transition-all ${
-                            formData.time === slot.time
-                              ? 'bg-gold text-cream border-gold shadow-md'
-                              : slot.available
-                                ? 'bg-white dark:bg-neutral-800 border-brown-dark/10 text-brown-dark dark:text-neutral-300 hover:border-gold hover:text-gold cursor-pointer'
+                          className={`py-3 text-center rounded-lg border transition-all text-sm font-bold shadow-sm ${
+                            formData.time === slot.time 
+                              ? 'bg-gold border-gold text-cream' 
+                              : slot.available 
+                                ? 'bg-white dark:bg-neutral-800 border-brown-dark/5 text-brown-dark dark:text-neutral-300 hover:border-gold/30 hover:bg-gold/5 cursor-pointer'
                                 : 'bg-brown-dark/5 text-brown-dark/30 border-brown-dark/5 cursor-not-allowed'
                           }`}
                         >
@@ -250,35 +250,34 @@ export default function BookingPage() {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-brown-light mb-2">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Jane Doe"
+                  <label className="block text-sm text-brown-dark dark:text-neutral-300 font-bold mb-2">Full Name *</label>
+                  <input 
+                    type="text" 
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full p-4 rounded bg-white/50 dark:bg-black/20 border border-brown-dark/10 text-brown-dark dark:text-white focus:border-gold focus:ring-1 focus:ring-gold outline-none transition-all"
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full bg-white dark:bg-neutral-800 border border-brown-dark/10 dark:border-white/10 rounded px-4 py-3 text-brown-dark dark:text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold shadow-sm" 
+                    placeholder="Jane Doe" 
                   />
                 </div>
+                
                 <div>
-                  <label className="block text-sm font-bold text-brown-light mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="+91 98765 43210"
+                  <label className="block text-sm text-brown-dark dark:text-neutral-300 font-bold mb-2">Phone Number *</label>
+                  <input 
+                    type="tel" 
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full p-4 rounded bg-white/50 dark:bg-black/20 border border-brown-dark/10 text-brown-dark dark:text-white focus:border-gold focus:ring-1 focus:ring-gold outline-none transition-all"
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full bg-white dark:bg-neutral-800 border border-brown-dark/10 dark:border-white/10 rounded px-4 py-3 text-brown-dark dark:text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold shadow-sm" 
+                    placeholder="+91" 
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-bold text-brown-light mb-2">Additional Notes (Optional)</label>
-                  <textarea
-                    rows={4}
-                    placeholder="Any specific requests?"
+                  <label className="block text-sm text-brown-dark dark:text-neutral-300 font-bold mb-2">Any Notes? (Optional)</label>
+                  <textarea 
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full p-4 rounded bg-white/50 dark:bg-black/20 border border-brown-dark/10 text-brown-dark dark:text-white focus:border-gold focus:ring-1 focus:ring-gold outline-none transition-all resize-none"
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    className="w-full bg-white dark:bg-neutral-800 border border-brown-dark/10 dark:border-white/10 rounded px-4 py-3 text-brown-dark dark:text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold resize-none shadow-sm" 
+                    rows={3}
                   />
                 </div>
               </div>
@@ -290,22 +289,22 @@ export default function BookingPage() {
             <div className="space-y-6">
               <h2 className="text-3xl font-serif text-ochre mb-8">Confirm Appointment</h2>
               
-              <div className="bg-white/50 dark:bg-black/20 p-6 rounded-lg border border-brown-dark/10 shadow-sm space-y-4">
-                <div className="flex justify-between pb-4 border-b border-brown-dark/5">
-                  <span className="text-brown-light font-bold">Service</span>
+              <div className="bg-white dark:bg-neutral-800 p-6 rounded-lg border border-brown-dark/5 dark:border-white/10 shadow-sm space-y-4">
+                <div className="flex justify-between pb-4 border-b border-brown-dark/5 dark:border-white/10">
+                  <span className="text-brown-light dark:text-neutral-400 font-bold">Service</span>
                   <span className="font-bold text-brown-dark dark:text-white">{selectedServices.map(s => s.name).join(', ')}</span>
                 </div>
-                <div className="flex justify-between pb-4 border-b border-brown-dark/5">
-                  <span className="text-brown-light font-bold">Date & Time</span>
-                  <span className="font-bold text-brown-dark">{formData.date} at {formData.time}</span>
+                <div className="flex justify-between pb-4 border-b border-brown-dark/5 dark:border-white/10">
+                  <span className="text-brown-light dark:text-neutral-400 font-bold">Date & Time</span>
+                  <span className="font-bold text-brown-dark dark:text-white">{formData.date} at {formData.time}</span>
                 </div>
-                <div className="flex justify-between pb-4 border-b border-brown-dark/5">
-                  <span className="text-brown-light font-bold">Client</span>
-                  <span className="font-bold text-brown-dark">{formData.name} ({formData.phone})</span>
+                <div className="flex justify-between pb-4 border-b border-brown-dark/5 dark:border-white/10">
+                  <span className="text-brown-light dark:text-neutral-400 font-bold">Client</span>
+                  <span className="font-bold text-brown-dark dark:text-white">{formData.name} ({formData.phone})</span>
                 </div>
                 <div className="flex justify-between pt-4 text-xl">
-                  <span className="font-serif text-brown-dark font-bold">Amount</span>
-                  <span className="font-serif text-gold font-bold">₹{selectedService?.price}</span>
+                  <span className="font-serif text-brown-dark dark:text-white font-bold">Amount</span>
+                  <span className="font-serif text-gold font-bold">₹{selectedServices.reduce((total, s) => total + s.price, 0)}</span>
                 </div>
               </div>
 
