@@ -44,7 +44,7 @@ export default function Navbar() {
               alt="The 11 Professional Family Salon" 
               width={260} 
               height={100} 
-              className="object-contain h-[55px] md:h-[85px] lg:h-[110px] w-auto origin-left transition-all duration-300 ease-out hover:scale-105 hover:opacity-90 dark:drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]"
+              className="object-contain h-[55px] md:h-[85px] lg:h-[110px] w-auto origin-left transition-all duration-300 ease-out hover:scale-105 hover:opacity-90 dark:invert"
               priority
             />
           </Link>

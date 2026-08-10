@@ -141,7 +141,7 @@ export default function BookingPage() {
                     placeholder="Search services..."
                     value={serviceSearch}
                     onChange={(e) => setServiceSearch(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-white/50 border border-brown-dark/10 rounded-full text-brown-dark placeholder:text-brown-dark/40 focus:outline-none focus:ring-2 focus:ring-gold/30 transition-all w-full sm:w-64"
+                    className="pl-10 pr-4 py-2 bg-white/50 dark:bg-black/20 border border-brown-dark/10 rounded-full text-brown-dark placeholder:text-brown-dark/40 focus:outline-none focus:ring-2 focus:ring-gold/30 transition-all w-full sm:w-64"
                   />
                 </div>
               </div>
@@ -164,12 +164,12 @@ export default function BookingPage() {
                       className={`p-6 rounded-lg cursor-pointer border transition-all shadow-sm ${
                         isSelected 
                           ? 'bg-gold/10 border-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]' 
-                          : 'bg-white border-brown-dark/5 hover:border-gold/30'
+                          : 'bg-white dark:bg-neutral-800 border-brown-dark/5 hover:border-gold/30'
                       }`}
                     >
                       <h4 className="text-lg font-bold font-serif text-[#CE8118] mb-2">{service.name}</h4>
                       <div className="flex justify-between text-sm text-brown-light font-bold">
-                        <span>{service.duration} mins</span>
+                        <span className="dark:text-neutral-300">{service.duration} mins</span>
                         <span className="text-gold">₹{service.price}</span>
                       </div>
                     </div>
@@ -199,12 +199,12 @@ export default function BookingPage() {
                         className={`min-w-[80px] p-4 text-center rounded-lg cursor-pointer border transition-all shadow-sm ${
                           formData.date === dateStr 
                             ? 'bg-gold border-gold text-cream font-bold' 
-                            : 'bg-white border-brown-dark/5 text-brown-dark hover:border-gold/30'
+                            : 'bg-white dark:bg-neutral-800 border-brown-dark/5 text-brown-dark dark:text-neutral-300 hover:border-gold/30'
                         }`}
                       >
-                        <div className="text-xs uppercase font-bold text-brown-light">{monStr}</div>
+                        <div className="text-xs uppercase font-bold text-brown-light dark:text-neutral-400">{monStr}</div>
                         <div className="text-2xl my-1 font-serif">{domStr}</div>
-                        <div className="text-xs font-bold text-brown-light">{dayStr}</div>
+                        <div className="text-xs font-bold text-brown-light dark:text-neutral-400">{dayStr}</div>
                       </div>
                     )
                   })}
@@ -221,17 +221,20 @@ export default function BookingPage() {
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                       {availableSlots.map(slot => (
-                        <div 
+                        <button
                           key={slot.time}
+                          disabled={!slot.available}
                           onClick={() => setFormData({ ...formData, time: slot.time })}
-                          className={`py-3 text-center rounded-lg cursor-pointer border transition-all text-sm font-bold shadow-sm ${
-                            formData.time === slot.time 
-                              ? 'bg-gold border-gold text-cream' 
-                              : 'bg-white border-brown-dark/5 text-brown-dark hover:border-gold/30 hover:bg-gold/5'
+                          className={`p-4 rounded border text-center font-bold transition-all ${
+                            formData.time === slot.time
+                              ? 'bg-gold text-cream border-gold shadow-md'
+                              : slot.available
+                                ? 'bg-white dark:bg-neutral-800 border-brown-dark/10 text-brown-dark dark:text-neutral-300 hover:border-gold hover:text-gold cursor-pointer'
+                                : 'bg-brown-dark/5 text-brown-dark/30 border-brown-dark/5 cursor-not-allowed'
                           }`}
                         >
                           {slot.time}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -247,34 +250,35 @@ export default function BookingPage() {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm text-brown-dark font-bold mb-2">Full Name *</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-sm font-bold text-brown-light mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Jane Doe"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-white border border-brown-dark/10 rounded px-4 py-3 text-brown-dark focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold shadow-sm" 
-                    placeholder="Jane Doe" 
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full p-4 rounded bg-white/50 dark:bg-black/20 border border-brown-dark/10 text-brown-dark dark:text-white focus:border-gold focus:ring-1 focus:ring-gold outline-none transition-all"
                   />
                 </div>
-                
                 <div>
-                  <label className="block text-sm text-brown-dark font-bold mb-2">Phone Number *</label>
-                  <input 
-                    type="tel" 
+                  <label className="block text-sm font-bold text-brown-light mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98765 43210"
                     value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full bg-white border border-brown-dark/10 rounded px-4 py-3 text-brown-dark focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold shadow-sm" 
-                    placeholder="+91" 
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full p-4 rounded bg-white/50 dark:bg-black/20 border border-brown-dark/10 text-brown-dark dark:text-white focus:border-gold focus:ring-1 focus:ring-gold outline-none transition-all"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm text-brown-dark font-bold mb-2">Any Notes? (Optional)</label>
-                  <textarea 
+                  <label className="block text-sm font-bold text-brown-light mb-2">Additional Notes (Optional)</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Any specific requests?"
                     value={formData.notes}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    className="w-full bg-white border border-brown-dark/10 rounded px-4 py-3 text-brown-dark focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold resize-none shadow-sm" 
-                    rows={3}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="w-full p-4 rounded bg-white/50 dark:bg-black/20 border border-brown-dark/10 text-brown-dark dark:text-white focus:border-gold focus:ring-1 focus:ring-gold outline-none transition-all resize-none"
                   />
                 </div>
               </div>
@@ -286,10 +290,10 @@ export default function BookingPage() {
             <div className="space-y-6">
               <h2 className="text-3xl font-serif text-ochre mb-8">Confirm Appointment</h2>
               
-              <div className="bg-white p-6 rounded-lg border border-brown-dark/5 shadow-sm space-y-4">
+              <div className="bg-white/50 dark:bg-black/20 p-6 rounded-lg border border-brown-dark/10 shadow-sm space-y-4">
                 <div className="flex justify-between pb-4 border-b border-brown-dark/5">
                   <span className="text-brown-light font-bold">Service</span>
-                  <span className="font-bold text-brown-dark">{selectedService?.name}</span>
+                  <span className="font-bold text-brown-dark dark:text-white">{selectedServices.map(s => s.name).join(', ')}</span>
                 </div>
                 <div className="flex justify-between pb-4 border-b border-brown-dark/5">
                   <span className="text-brown-light font-bold">Date & Time</span>
