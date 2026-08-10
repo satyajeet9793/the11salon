@@ -14,9 +14,12 @@ export default function AppointmentsPage() {
   const [services, setServices] = useState<{id: string, name: string, price: number}[]>([]);
   const [customers, setCustomers] = useState<{id: string, name: string, phone: string}[]>([]);
   const [showPhoneSuggestions, setShowPhoneSuggestions] = useState(false);
+  const [showServiceSuggestions, setShowServiceSuggestions] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState("");
   const [formData, setFormData] = useState({
     customerName: "",
     customerPhone: "",
+    customerDob: "",
     serviceId: "",
     date: "",
     timeSlot: "",
@@ -124,7 +127,8 @@ export default function AppointmentsPage() {
       });
       if (res.ok) {
         setShowModal(false);
-        setFormData({ customerName: "", customerPhone: "", serviceId: "", date: "", timeSlot: "", notes: "", membershipYears: "" });
+        setFormData({ customerName: "", customerPhone: "", customerDob: "", serviceId: "", date: "", timeSlot: "", notes: "", membershipYears: "" });
+        setServiceSearch("");
         fetchAppointments(selectedDate);
       } else {
         alert("Failed to create appointment.");
@@ -318,7 +322,12 @@ export default function AppointmentsPage() {
                                 key={c.phone}
                                 onMouseDown={(e) => {
                                   e.preventDefault(); // Prevent onBlur from firing before this completes
-                                  setFormData({ ...formData, customerPhone: c.phone, customerName: c.name });
+                                  setFormData({ 
+                                    ...formData, 
+                                    customerPhone: c.phone, 
+                                    customerName: c.name,
+                                    customerDob: c.dob ? c.dob.split('T')[0] : ""
+                                  });
                                   setShowPhoneSuggestions(false);
                                 }}
                                 className="px-4 py-2 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0"
@@ -335,17 +344,54 @@ export default function AppointmentsPage() {
                   <p className="text-xs text-neutral-500 mt-1">If phone exists, appointment is added to them. If not, a new customer is created.</p>
                 </div>
                 <div className="space-y-1">
+                  <label className="text-sm font-medium text-neutral-700">Birth Date</label>
+                  <input 
+                    type="date"
+                    value={formData.customerDob} onChange={e => setFormData({...formData, customerDob: e.target.value})}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                  />
+                </div>
+                <div className="space-y-1 relative">
                   <label className="text-sm font-medium text-neutral-700">Service *</label>
-                  <select 
-                    required
-                    value={formData.serviceId} onChange={e => setFormData({...formData, serviceId: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none bg-white"
-                  >
-                    <option value="" disabled>Select a service</option>
-                    {services.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} - ₹{s.price}</option>
-                    ))}
-                  </select>
+                  <input 
+                    type="text" required
+                    placeholder="Search for a service"
+                    value={serviceSearch} 
+                    onFocus={() => setShowServiceSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowServiceSuggestions(false), 200)}
+                    onChange={e => {
+                      setServiceSearch(e.target.value);
+                      setShowServiceSuggestions(true);
+                      setFormData({...formData, serviceId: ""}); // Reset selected service ID when typing
+                    }}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                  />
+                  {showServiceSuggestions && (
+                    <div className="absolute top-[calc(100%-0.25rem)] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
+                      {services
+                        .filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase()))
+                        .map(s => (
+                          <div 
+                            key={s.id}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setFormData({ ...formData, serviceId: s.id });
+                              setServiceSearch(`${s.name} - ₹${s.price}`);
+                              setShowServiceSuggestions(false);
+                            }}
+                            className={`px-4 py-2 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0 ${formData.serviceId === s.id ? 'bg-amber-50' : ''}`}
+                          >
+                            <div className="font-medium text-neutral-900">{s.name}</div>
+                            <div className="text-xs text-neutral-500">₹{s.price}</div>
+                          </div>
+                        ))}
+                      {services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase())).length === 0 && (
+                        <div className="px-4 py-3 text-sm text-neutral-500">No services found</div>
+                      )}
+                    </div>
+                  )}
+                  {/* Hidden required input so form submission validates it */}
+                  <input type="text" required className="hidden" value={formData.serviceId} readOnly />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-neutral-700">Date *</label>

@@ -56,7 +56,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    let { customerId, customerName, customerPhone, serviceId, staffId, date, timeSlot, notes, membershipYears } = body;
+    let { customerId, customerName, customerPhone, customerDob, serviceId, staffId, date, timeSlot, notes, membershipYears } = body;
+
+    let dobDate = customerDob ? new Date(customerDob) : null;
 
     if (!customerId && customerName && customerPhone) {
       let customer = await prisma.customer.findUnique({ where: { phone: customerPhone } });
@@ -77,14 +79,27 @@ export async function POST(req: NextRequest) {
           data: { 
             name: customerName, 
             phone: customerPhone,
+            dob: dobDate,
             isMember,
             membershipStartDate,
             membershipEndDate,
             membershipYears: parsedYears
           } 
         });
+      } else if (dobDate) {
+        // Update DOB if provided and customer already exists
+        customer = await prisma.customer.update({
+          where: { id: customer.id },
+          data: { dob: dobDate }
+        });
       }
       customerId = customer.id;
+    } else if (customerId && dobDate) {
+      // Update DOB if customerId is explicitly provided
+      await prisma.customer.update({
+        where: { id: customerId },
+        data: { dob: dobDate }
+      });
     }
 
     if (!customerId) return NextResponse.json({ error: "Customer details missing" }, { status: 400 });
