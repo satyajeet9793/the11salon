@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Clock, Search, Calendar as CalendarIcon, CheckCircle2, PlayCircle, MapPin, AlertCircle, Trash2, X } from "lucide-react";
+import { Plus, Clock, Search, Calendar as CalendarIcon, CheckCircle2, PlayCircle, MapPin, AlertCircle, Trash2, X, User, ArrowRight, ChevronLeft, ChevronRight, UserCheck } from "lucide-react";
 import { format, parseISO, startOfToday, addDays, subDays } from "date-fns";
 
 export default function AppointmentsPage() {
@@ -11,16 +11,21 @@ export default function AppointmentsPage() {
   const [selectedDate, setSelectedDate] = useState(startOfToday());
   const [showModal, setShowModal] = useState(false);
   const [completedAptId, setCompletedAptId] = useState<string | null>(null);
+  
   const [services, setServices] = useState<{id: string, name: string, price: number}[]>([]);
   const [customers, setCustomers] = useState<{id: string, name: string, phone: string}[]>([]);
+  const [staffList, setStaffList] = useState<{id: string, name: string}[]>([]);
+  
   const [showPhoneSuggestions, setShowPhoneSuggestions] = useState(false);
   const [showServiceSuggestions, setShowServiceSuggestions] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
+  
   const [formData, setFormData] = useState({
     customerName: "",
     customerPhone: "",
     customerDob: "",
     serviceIds: [] as string[],
+    staffId: "",
     date: "",
     timeSlot: "",
     notes: "",
@@ -36,6 +41,7 @@ export default function AppointmentsPage() {
     if (showModal) {
       fetch("/api/admin/services").then(res => res.json()).then(data => setServices(data));
       fetch("/api/admin/customers").then(res => res.json()).then(data => setCustomers(data));
+      fetch("/api/admin/staff").then(res => res.json()).then(data => setStaffList(data.filter((s: any) => s.isAvailable)));
     }
   }, [showModal]);
 
@@ -88,7 +94,6 @@ export default function AppointmentsPage() {
 
   const handleCompleteAppointment = async (apt: any) => {
     try {
-      // 1. Mark as completed (Server now auto-generates invoice)
       const res = await fetch(`/api/admin/appointments/${apt.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -111,14 +116,19 @@ export default function AppointmentsPage() {
       return;
     }
     try {
+      const payload = {
+        ...formData,
+        staffId: formData.staffId || null
+      };
+
       const res = await fetch("/api/admin/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         setShowModal(false);
-        setFormData({ customerName: "", customerPhone: "", customerDob: "", serviceIds: [], date: "", timeSlot: "", notes: "", membershipYears: "" });
+        setFormData({ customerName: "", customerPhone: "", customerDob: "", serviceIds: [], staffId: "", date: "", timeSlot: "", notes: "", membershipYears: "", customPrice: "" });
         setServiceSearch("");
         fetchAppointments(selectedDate);
       } else {
@@ -130,345 +140,425 @@ export default function AppointmentsPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch(status) {
-      case 'PENDING': return <span className="px-2.5 py-1 text-xs font-medium bg-neutral-100 text-neutral-800 rounded-full">Pending</span>;
-      case 'BOOKED': return <span className="px-2.5 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Online Booking</span>;
-      case 'CHECKED_IN': return <span className="px-2.5 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">Checked In</span>;
-      case 'IN_PROGRESS': return <span className="px-2.5 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">In Progress</span>;
-      case 'COMPLETED': return <span className="px-2.5 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Completed</span>;
-      case 'CANCELLED': return <span className="px-2.5 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Cancelled</span>;
-      case 'NO_SHOW': return <span className="px-2.5 py-1 text-xs font-medium bg-neutral-200 text-neutral-600 rounded-full">No Show</span>;
-      default: return null;
+      case 'PENDING': return { bg: 'bg-neutral-100', text: 'text-neutral-800', border: 'border-neutral-200', label: 'Pending' };
+      case 'BOOKED': return { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', label: 'Online Booking' };
+      case 'CHECKED_IN': return { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200', label: 'Checked In' };
+      case 'IN_PROGRESS': return { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200', label: 'In Progress' };
+      case 'COMPLETED': return { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-200', label: 'Completed' };
+      case 'CANCELLED': return { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-200', label: 'Cancelled' };
+      case 'NO_SHOW': return { bg: 'bg-neutral-200', text: 'text-neutral-600', border: 'border-neutral-300', label: 'No Show' };
+      default: return { bg: 'bg-neutral-100', text: 'text-neutral-800', border: 'border-neutral-200', label: status };
     }
   };
 
+  // Generate an array of dates around the selected date for the horizontal picker
+  const generateDateRange = () => {
+    const dates = [];
+    for (let i = -3; i <= 3; i++) {
+      dates.push(addDays(selectedDate, i));
+    }
+    return dates;
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-8 pb-10">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Appointments</h1>
-          <p className="text-neutral-500 mt-1">Manage today's schedule and check-in customers.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-neutral-900 mb-2">Appointments</h1>
+          <p className="text-neutral-500 text-lg">Manage your daily schedule and track salon visits.</p>
         </div>
         <button 
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-neutral-900 font-medium rounded-lg transition-colors shadow-sm"
+          className="flex items-center px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
           <Plus className="h-5 w-5 mr-2" />
           New Appointment
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-neutral-200 bg-neutral-50 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => setSelectedDate(subDays(selectedDate, 1))}
-              className="p-2 text-neutral-500 hover:bg-neutral-200 rounded-lg transition-colors"
-            >
-              &lt;
-            </button>
-            <div className="relative flex items-center font-medium text-neutral-900 bg-white px-4 py-2 border border-neutral-200 rounded-lg shadow-sm hover:bg-neutral-50 transition-colors cursor-pointer">
-              <CalendarIcon className="h-4 w-4 mr-2 text-amber-500" />
-              <span>{format(selectedDate, "EEEE, MMMM d, yyyy")}</span>
-              <input 
-                type="date"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                value={format(selectedDate, "yyyy-MM-dd")}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    // We parse the local date string to avoid timezone shifts
-                    const [year, month, day] = e.target.value.split('-');
-                    setSelectedDate(new Date(Number(year), Number(month) - 1, Number(day)));
-                  }
-                }}
-              />
-            </div>
-            <button 
-              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-              className="p-2 text-neutral-500 hover:bg-neutral-200 rounded-lg transition-colors"
-            >
-              &gt;
-            </button>
+      {/* INTERACTIVE DATE NAVIGATOR */}
+      <div className="bg-white rounded-3xl p-4 shadow-sm border border-neutral-100">
+        <div className="flex items-center justify-between gap-4">
+          <button 
+            onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+            className="p-3 bg-neutral-50 hover:bg-neutral-100 text-neutral-600 rounded-2xl transition-colors shadow-sm"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          
+          <div className="flex-1 flex overflow-x-auto hide-scrollbar gap-2 md:justify-center py-2 px-1">
+            {generateDateRange().map((date, idx) => {
+              const isSelected = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+              const isToday = format(date, 'yyyy-MM-dd') === format(startOfToday(), 'yyyy-MM-dd');
+              return (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedDate(date)}
+                  className={`flex flex-col items-center justify-center min-w-[70px] py-3 rounded-2xl transition-all duration-300 flex-shrink-0 ${
+                    isSelected 
+                      ? 'bg-neutral-900 text-white shadow-md transform scale-105' 
+                      : 'bg-transparent text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900'
+                  }`}
+                >
+                  <span className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isSelected ? 'text-neutral-300' : 'text-neutral-400'}`}>
+                    {format(date, 'EEE')}
+                  </span>
+                  <span className={`text-xl font-bold ${isSelected ? 'text-white' : 'text-neutral-900'}`}>
+                    {format(date, 'd')}
+                  </span>
+                  {isToday && (
+                    <span className={`mt-1 h-1 w-1 rounded-full ${isSelected ? 'bg-amber-500' : 'bg-neutral-900'}`}></span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => setSelectedDate(startOfToday())}
-              className="px-3 py-1.5 text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+              className="hidden md:block px-4 py-3 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-2xl transition-colors shadow-sm"
             >
               Today
             </button>
+            <button 
+              onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+              className="p-3 bg-neutral-50 hover:bg-neutral-100 text-neutral-600 rounded-2xl transition-colors shadow-sm"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
         </div>
+      </div>
 
-        <div className="p-0">
-          {loading ? (
-            <div className="p-8 text-center text-neutral-500">Loading schedule...</div>
-          ) : appointments.length === 0 ? (
-            <div className="p-16 text-center">
-              <div className="mx-auto h-16 w-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
-                <CalendarIcon className="h-8 w-8 text-neutral-400" />
-              </div>
-              <h3 className="text-lg font-medium text-neutral-900">No appointments scheduled</h3>
-              <p className="text-neutral-500 mt-1">There are no bookings for this date.</p>
+      {/* APPOINTMENTS LIST */}
+      <div>
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center">
+            <div className="animate-spin h-10 w-10 border-4 border-amber-500 border-t-transparent rounded-full mb-4"></div>
+            <p className="text-neutral-500 font-medium">Loading schedule...</p>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="py-24 flex flex-col items-center justify-center text-center bg-white rounded-3xl border border-neutral-100 shadow-sm">
+            <div className="h-24 w-24 bg-neutral-50 rounded-full flex items-center justify-center mb-6">
+              <CalendarIcon className="h-10 w-10 text-neutral-400" />
             </div>
-          ) : (
-            <ul className="divide-y divide-neutral-200">
-              {appointments.map((apt: any) => (
-                <li key={apt.id} className="p-6 hover:bg-neutral-50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-6">
-                      <div className="text-center w-24 flex-shrink-0">
-                        <div className="text-lg font-bold text-neutral-900">{apt.timeSlot}</div>
-                        <div className="text-sm text-neutral-500 flex items-center justify-center mt-1">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {apt.duration} min
-                        </div>
+            <h3 className="text-2xl font-bold text-neutral-900 mb-2">Your day is open!</h3>
+            <p className="text-neutral-500 max-w-sm mb-8 text-lg">There are no appointments scheduled for {format(selectedDate, 'MMMM d, yyyy')}.</p>
+            <button 
+              onClick={() => setShowModal(true)}
+              className="px-8 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl"
+            >
+              Create the first booking
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {appointments.map((apt: any) => {
+              const statusConfig = getStatusConfig(apt.status);
+              return (
+                <div 
+                  key={apt.id} 
+                  className="group bg-white rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-100 relative overflow-hidden transform hover:-translate-y-1"
+                >
+                  {/* Status Gradient Bar */}
+                  <div className={`absolute top-0 left-0 w-full h-2 ${statusConfig.bg} opacity-80`}></div>
+                  
+                  <div className="flex justify-between items-start mb-6 pt-2">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-100 shadow-inner flex flex-col items-center min-w-[70px]">
+                        <span className="text-lg font-black text-neutral-900 leading-none">{apt.timeSlot}</span>
                       </div>
-                      
-                      <div className="w-[1px] h-16 bg-neutral-200 hidden md:block"></div>
-
                       <div>
-                        <h4 className="text-lg font-semibold text-neutral-900">{apt.customer?.name}</h4>
-                        <p className="text-neutral-600">{apt.service?.name}</p>
-                        <div className="flex items-center gap-4 mt-2">
-                          {getStatusBadge(apt.status)}
-                          <span className="text-sm text-neutral-500">With {apt.staff?.name || 'Any Staff'}</span>
+                        <span className={`inline-flex items-center px-2.5 py-1 text-xs font-bold ${statusConfig.bg} ${statusConfig.text} rounded-lg mb-1`}>
+                          {statusConfig.label}
+                        </span>
+                        <div className="flex items-center text-xs text-neutral-500 font-medium">
+                          <Clock className="h-3.5 w-3.5 mr-1" />
+                          {apt.duration} mins
                         </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {(apt.status === "BOOKED" || apt.status === "CHECKED_IN" || apt.status === "IN_PROGRESS") && (
-                        <>
-                          <button 
-                            onClick={() => handleCompleteAppointment(apt)}
-                            className="flex items-center px-3 py-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg text-sm font-medium transition-colors shadow-sm border border-green-200"
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1.5" /> Complete
-                          </button>
-                          <button 
-                            onClick={() => updateStatus(apt.id, "CANCELLED")}
-                            className="flex items-center px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-sm font-medium transition-colors shadow-sm border border-red-200"
-                          >
-                            <AlertCircle className="h-4 w-4 mr-1.5" /> Cancel
-                          </button>
-                        </>
-                      )}
-                      <button 
-                        onClick={() => handleDeleteAppointment(apt.id)}
-                        className="flex items-center px-3 py-1.5 bg-neutral-100 text-neutral-500 hover:bg-red-50 hover:text-red-700 rounded-lg text-sm font-medium transition-colors shadow-sm"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+
+                  <div className="mb-6">
+                    <h4 className="text-2xl font-bold text-neutral-900 mb-1">{apt.customer?.name}</h4>
+                    <p className="text-neutral-600 font-medium text-lg flex items-center">
+                      <ArrowRight className="h-4 w-4 mr-2 text-amber-500" />
+                      {apt.service?.name}
+                    </p>
+                  </div>
+
+                  <div className="bg-neutral-50 rounded-2xl p-4 mb-6 border border-neutral-100 group-hover:bg-amber-50/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-white rounded-full shadow-sm flex items-center justify-center border border-neutral-100">
+                        {apt.staff ? (
+                          <UserCheck className="h-5 w-5 text-amber-600" />
+                        ) : (
+                          <User className="h-5 w-5 text-neutral-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Assigned Staff</p>
+                        <p className={`font-bold ${apt.staff ? 'text-neutral-900' : 'text-neutral-500'}`}>
+                          {apt.staff?.name || 'Any Available Staff'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    {(apt.status === "BOOKED" || apt.status === "CHECKED_IN" || apt.status === "IN_PROGRESS") && (
+                      <button 
+                        onClick={() => handleCompleteAppointment(apt)}
+                        className="flex-1 flex items-center justify-center px-4 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-sm font-bold transition-all shadow-md"
+                      >
+                        <CheckCircle2 className="h-5 w-5 mr-2 text-green-400" /> Complete
+                      </button>
+                    )}
+                    
+                    {(apt.status === "BOOKED" || apt.status === "CHECKED_IN" || apt.status === "IN_PROGRESS") && (
+                      <button 
+                        onClick={() => updateStatus(apt.id, "CANCELLED")}
+                        className="px-4 py-3 bg-neutral-100 hover:bg-red-50 text-neutral-700 hover:text-red-700 rounded-xl text-sm font-bold transition-all shadow-sm border border-neutral-200 hover:border-red-200"
+                        title="Cancel Appointment"
+                      >
+                        <AlertCircle className="h-5 w-5" />
+                      </button>
+                    )}
+
+                    <button 
+                      onClick={() => handleDeleteAppointment(apt.id)}
+                      className="px-4 py-3 bg-white hover:bg-red-50 text-neutral-400 hover:text-red-600 rounded-xl text-sm font-bold transition-all border border-neutral-200 hover:border-red-200 shadow-sm"
+                      title="Delete Record completely"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
       {/* NEW APPOINTMENT MODAL */}
       {showModal && (
-        <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-neutral-900">Add New Appointment</h2>
-              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-neutral-600">✕</button>
+        <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+            <div className="px-8 py-6 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+              <h2 className="text-2xl font-bold text-neutral-900 flex items-center gap-3">
+                <CalendarIcon className="h-6 w-6 text-amber-500" />
+                New Appointment
+              </h2>
+              <button onClick={() => setShowModal(false)} className="h-10 w-10 bg-white rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors shadow-sm border border-neutral-100">✕</button>
             </div>
             
-            <form onSubmit={handleCreateAppointment} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Customer Name *</label>
-                  <input 
-                    type="text" required
-                    placeholder="Enter customer name"
-                    value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-1 relative">
-                  <label className="text-sm font-medium text-neutral-700">Customer Phone *</label>
-                  <input 
-                    type="text" required
-                    placeholder="Enter phone number"
-                    value={formData.customerPhone} 
-                    onFocus={() => setShowPhoneSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowPhoneSuggestions(false), 200)}
-                    onChange={e => {
-                      setFormData({...formData, customerPhone: e.target.value});
-                      setShowPhoneSuggestions(true);
-                    }}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                  {showPhoneSuggestions && formData.customerPhone.length >= 2 && (
-                    <div className="absolute top-[calc(100%-1.25rem)] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
-                      {customers
-                        .filter(c => c.phone.includes(formData.customerPhone))
-                        .length > 0 ? (
-                          customers
+            <form onSubmit={handleCreateAppointment} className="p-8 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                
+                {/* Customer Section */}
+                <div className="md:col-span-2 space-y-4 bg-neutral-50 p-5 rounded-2xl border border-neutral-100">
+                  <h3 className="text-sm font-bold text-neutral-900 uppercase tracking-wider mb-2">Customer Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5 relative">
+                      <label className="text-sm font-semibold text-neutral-700">Phone *</label>
+                      <input 
+                        type="text" required
+                        placeholder="Search or enter new phone"
+                        value={formData.customerPhone} 
+                        onFocus={() => setShowPhoneSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowPhoneSuggestions(false), 200)}
+                        onChange={e => {
+                          setFormData({...formData, customerPhone: e.target.value});
+                          setShowPhoneSuggestions(true);
+                        }}
+                        className="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
+                      />
+                      {showPhoneSuggestions && formData.customerPhone.length >= 2 && (
+                        <div className="absolute top-[calc(100%-0.5rem)] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto overflow-hidden">
+                          {customers
                             .filter(c => c.phone.includes(formData.customerPhone))
-                            .map(c => (
-                              <div 
-                                key={c.phone}
-                                onMouseDown={(e) => {
-                                  e.preventDefault(); // Prevent onBlur from firing before this completes
-                                  setFormData({ 
-                                    ...formData, 
-                                    customerPhone: c.phone, 
-                                    customerName: c.name,
-                                    customerDob: c.dob ? c.dob.split('T')[0] : ""
-                                  });
-                                  setShowPhoneSuggestions(false);
-                                }}
-                                className="px-4 py-2 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0"
-                              >
-                                <div className="font-medium text-neutral-900">{c.phone}</div>
-                                <div className="text-xs text-neutral-500">{c.name}</div>
-                              </div>
-                            ))
-                        ) : (
-                          <div className="px-4 py-3 text-sm text-neutral-500">New customer</div>
-                        )}
-                    </div>
-                  )}
-                  <p className="text-xs text-neutral-500 mt-1">If phone exists, appointment is added to them. If not, a new customer is created.</p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Birth Date</label>
-                  <input 
-                    type="date"
-                    value={formData.customerDob} onChange={e => setFormData({...formData, customerDob: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-1 relative">
-                  <label className="text-sm font-medium text-neutral-700">Service *</label>
-                  <input 
-                    type="text"
-                    placeholder="Search for a service"
-                    value={serviceSearch} 
-                    onFocus={() => setShowServiceSuggestions(true)}
-                    onClick={() => setShowServiceSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowServiceSuggestions(false), 200)}
-                    onChange={e => {
-                      setServiceSearch(e.target.value);
-                      setShowServiceSuggestions(true);
-                    }}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                  {/* Selected Services Chips */}
-                  {formData.serviceIds.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {formData.serviceIds.map(sid => {
-                        const s = services.find(srv => srv.id === sid);
-                        if (!s) return null;
-                        return (
-                          <div key={sid} className="flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-md text-sm font-medium">
-                            {s.name}
-                            <button
-                              type="button"
-                              onClick={() => setFormData({ ...formData, serviceIds: formData.serviceIds.filter(id => id !== sid) })}
-                              className="text-amber-600 hover:text-amber-900 focus:outline-none"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {showServiceSuggestions && (
-                    <div className="absolute top-[calc(100%-0.25rem)] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
-                      {services
-                        .filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase()))
-                        .map(s => (
-                          <div 
-                            key={s.id}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              if (!formData.serviceIds.includes(s.id)) {
-                                setFormData({ ...formData, serviceIds: [...formData.serviceIds, s.id] });
-                              }
-                              setServiceSearch("");
-                              setShowServiceSuggestions(false);
-                            }}
-                            className={`px-4 py-2 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0 ${formData.serviceIds.includes(s.id) ? 'bg-amber-50' : ''}`}
-                          >
-                            <div className="font-medium text-neutral-900">{s.name}</div>
-                            <div className="text-xs text-neutral-500">₹{s.price}</div>
-                          </div>
-                        ))}
-                      {services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase())).length === 0 && (
-                        <div className="px-4 py-3 text-sm text-neutral-500">No services found</div>
+                            .length > 0 ? (
+                              customers
+                                .filter(c => c.phone.includes(formData.customerPhone))
+                                .map(c => (
+                                  <div 
+                                    key={c.phone}
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      setFormData({ 
+                                        ...formData, 
+                                        customerPhone: c.phone, 
+                                        customerName: c.name,
+                                        customerDob: c.dob ? c.dob.split('T')[0] : ""
+                                      });
+                                      setShowPhoneSuggestions(false);
+                                    }}
+                                    className="px-4 py-3 hover:bg-amber-50 cursor-pointer border-b border-neutral-50 last:border-0 transition-colors"
+                                  >
+                                    <div className="font-bold text-neutral-900">{c.phone}</div>
+                                    <div className="text-xs font-medium text-amber-600">{c.name}</div>
+                                  </div>
+                                ))
+                            ) : (
+                              <div className="px-4 py-4 text-sm font-medium text-neutral-500 bg-neutral-50">Will create new customer</div>
+                            )}
+                        </div>
                       )}
                     </div>
-                  )}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-neutral-700">Name *</label>
+                      <input 
+                        type="text" required
+                        placeholder="Customer name"
+                        value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})}
+                        className="w-full px-4 py-3 bg-white border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Date *</label>
+
+                {/* Service & Staff Section */}
+                <div className="md:col-span-2 space-y-4 pt-2">
+                  <h3 className="text-sm font-bold text-neutral-900 uppercase tracking-wider mb-2">Booking Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5 relative md:col-span-2">
+                      <label className="text-sm font-semibold text-neutral-700">Services *</label>
+                      <input 
+                        type="text"
+                        placeholder="Search and add services..."
+                        value={serviceSearch} 
+                        onFocus={() => setShowServiceSuggestions(true)}
+                        onClick={() => setShowServiceSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowServiceSuggestions(false), 200)}
+                        onChange={e => {
+                          setServiceSearch(e.target.value);
+                          setShowServiceSuggestions(true);
+                        }}
+                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
+                      />
+                      {/* Selected Services Chips */}
+                      {formData.serviceIds.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {formData.serviceIds.map(sid => {
+                            const s = services.find(srv => srv.id === sid);
+                            if (!s) return null;
+                            return (
+                              <div key={sid} className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-900 rounded-lg text-sm font-bold shadow-sm border border-amber-200">
+                                {s.name}
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, serviceIds: formData.serviceIds.filter(id => id !== sid) })}
+                                  className="text-amber-700 hover:text-amber-900 focus:outline-none bg-amber-200/50 hover:bg-amber-300 p-1 rounded-full transition-colors"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {showServiceSuggestions && (
+                        <div className="absolute top-[calc(100%-0.5rem)] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-2xl z-50 max-h-56 overflow-y-auto overflow-hidden">
+                          {services
+                            .filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase()))
+                            .map(s => (
+                              <div 
+                                key={s.id}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  if (!formData.serviceIds.includes(s.id)) {
+                                    setFormData({ ...formData, serviceIds: [...formData.serviceIds, s.id] });
+                                  }
+                                  setServiceSearch("");
+                                  setShowServiceSuggestions(false);
+                                }}
+                                className={`px-5 py-3 hover:bg-amber-50 cursor-pointer border-b border-neutral-50 last:border-0 transition-colors flex justify-between items-center ${formData.serviceIds.includes(s.id) ? 'bg-amber-50' : ''}`}
+                              >
+                                <div className="font-bold text-neutral-900">{s.name}</div>
+                                <div className="text-sm font-bold text-amber-600 bg-amber-100 px-2.5 py-1 rounded-md">₹{s.price}</div>
+                              </div>
+                            ))}
+                          {services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase())).length === 0 && (
+                            <div className="px-5 py-4 text-sm font-medium text-neutral-500 bg-neutral-50">No services found</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-neutral-700">Assign Staff</label>
+                      <select 
+                        value={formData.staffId} onChange={e => setFormData({...formData, staffId: e.target.value})}
+                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all font-medium text-neutral-800"
+                      >
+                        <option value="">Any Available Staff</option>
+                        {staffList.map(staff => (
+                          <option key={staff.id} value={staff.id}>{staff.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-semibold text-neutral-700">Custom Total (₹) (Optional)</label>
+                      <input 
+                        type="number" 
+                        placeholder="Override total price"
+                        value={formData.customPrice} onChange={e => setFormData({...formData, customPrice: e.target.value})}
+                        className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date & Time */}
+                <div className="space-y-1.5 pt-2">
+                  <label className="text-sm font-semibold text-neutral-700">Date *</label>
                   <input 
                     type="date" required
                     value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Time *</label>
+                <div className="space-y-1.5 pt-2">
+                  <label className="text-sm font-semibold text-neutral-700">Time *</label>
                   <input 
                     type="text" required
                     placeholder="e.g. 10:30 AM"
                     value={formData.timeSlot} onChange={e => setFormData({...formData, timeSlot: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Membership (Optional)</label>
-                  <select 
-                    value={formData.membershipYears} onChange={e => setFormData({...formData, membershipYears: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none bg-white"
-                  >
-                    <option value="">None</option>
-                    <option value="1">1 Year</option>
-                    <option value="2">2 Years</option>
-                    <option value="3">3 Years</option>
-                    <option value="5">5 Years</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Custom Total Amount (Optional)</label>
-                  <input 
-                    type="number" 
-                    placeholder="e.g. 1500"
-                    value={formData.customPrice} onChange={e => setFormData({...formData, customPrice: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                  <p className="text-xs text-neutral-500 mt-1">Overrides the default service total.</p>
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-sm font-medium text-neutral-700">Notes</label>
+                
+                <div className="space-y-1.5 md:col-span-2 pt-2">
+                  <label className="text-sm font-semibold text-neutral-700">Additional Notes</label>
                   <textarea 
                     rows={2}
+                    placeholder="Any special requests or details..."
                     value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none resize-none"
+                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none resize-none transition-all"
                   ></textarea>
                 </div>
               </div>
               
-              <div className="mt-6 flex justify-end gap-3">
+              <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-neutral-100">
                 <button 
                   type="button" 
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
+                  className="px-6 py-3 text-neutral-700 font-bold hover:bg-neutral-100 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 text-neutral-900 rounded-lg hover:bg-amber-600 transition-colors font-medium"
+                  className="px-8 py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
                 >
-                  Save Appointment
+                  Confirm Booking
                 </button>
               </div>
             </form>
@@ -478,25 +568,25 @@ export default function AppointmentsPage() {
 
       {/* BILL GENERATION SUCCESS MODAL */}
       {completedAptId && (
-        <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl p-8 text-center animate-in zoom-in-95 duration-200">
-            <div className="mx-auto h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
-              <CheckCircle2 className="h-8 w-8" />
+        <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-md flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-8 text-center animate-in zoom-in-95 duration-300">
+            <div className="mx-auto h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-inner border-4 border-white ring-1 ring-green-100">
+              <CheckCircle2 className="h-10 w-10" />
             </div>
-            <h3 className="text-xl font-bold text-neutral-900 mb-2">Service Completed!</h3>
-            <p className="text-neutral-500 mb-8 text-sm">
-              The appointment has been marked as completed, and the bill has been automatically generated with the service price.
+            <h3 className="text-2xl font-bold text-neutral-900 mb-2">All Done!</h3>
+            <p className="text-neutral-500 mb-8 text-base">
+              Appointment marked as completed. The bill has been successfully generated.
             </p>
             <div className="flex flex-col gap-3">
               <Link 
                 href="/admin/invoices"
-                className="w-full py-3 bg-amber-500 text-neutral-900 font-bold rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center"
+                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center"
               >
                 View / Print Bill
               </Link>
               <button 
                 onClick={() => setCompletedAptId(null)}
-                className="w-full py-3 bg-neutral-100 text-neutral-700 font-medium rounded-lg hover:bg-neutral-200 transition-colors"
+                className="w-full py-3.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold rounded-xl transition-colors"
               >
                 Close
               </button>
