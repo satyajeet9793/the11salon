@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Bell, Search, Menu, LogOut, LayoutDashboard, Users, CalendarDays, Briefcase, Scissors, FileText, Settings, X, Globe, Gift, MessageCircle } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -68,6 +69,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
+          <ThemeToggle />
           <div className="relative">
             <button 
               onClick={() => setShowNotifications(!showNotifications)}

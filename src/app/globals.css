@@ -13,17 +13,17 @@
   --color-amber-900: #5d3011;
   --color-amber-950: #331606;
 
-  --color-gold: #dd9546;
-  --color-gold-dark: #ab6015;
-  --color-bronze: #c4791b;
-  --color-cream: #f7eed4;
-  --color-beige: #f0e4c6;
-  --color-brown-dark: #331606;
-  --color-brown-light: #5d3011;
-  --color-ochre: #c4791b;
+  --color-gold: var(--theme-gold);
+  --color-gold-dark: var(--theme-gold-dark);
+  --color-bronze: var(--theme-bronze);
+  --color-cream: var(--theme-cream);
+  --color-beige: var(--theme-beige);
+  --color-brown-dark: var(--theme-brown-dark);
+  --color-brown-light: var(--theme-brown-light);
+  --color-ochre: var(--theme-ochre);
   
-  --color-background: var(--color-cream);
-  --color-foreground: var(--color-brown-dark);
+  --color-background: var(--theme-background);
+  --color-foreground: var(--theme-foreground);
 
   --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
@@ -31,18 +31,39 @@
 
 @layer base {
   :root {
-    --background: var(--color-cream);
-    --foreground: var(--color-brown-dark);
+    --theme-gold: #dd9546;
+    --theme-gold-dark: #ab6015;
+    --theme-bronze: #c4791b;
+    --theme-cream: #f7eed4;
+    --theme-beige: #f0e4c6;
+    --theme-brown-dark: #331606;
+    --theme-brown-light: #5d3011;
+    --theme-ochre: #c4791b;
+    --theme-background: var(--theme-cream);
+    --theme-foreground: var(--theme-brown-dark);
+  }
+
+  .dark {
+    --theme-gold: #e7b678;
+    --theme-gold-dark: #c4791b;
+    --theme-bronze: #e7b678;
+    --theme-cream: #120b06;
+    --theme-beige: #1a1008;
+    --theme-brown-dark: #f5eedc;
+    --theme-brown-light: #d6ba94;
+    --theme-ochre: #dd9546;
+    --theme-background: var(--theme-cream);
+    --theme-foreground: var(--theme-brown-dark);
   }
 
   body {
-    background-color: var(--background);
+    background-color: var(--theme-background);
     background-image: url('/images/bg-swirls.svg'), url('/images/bg-swirls.svg');
     background-attachment: fixed, fixed;
     background-position: top left, bottom right;
     background-repeat: no-repeat, no-repeat;
     background-size: 45vw auto, 45vw auto;
-    color: var(--foreground);
+    color: var(--theme-foreground);
     font-family: var(--font-sans);
   }
 

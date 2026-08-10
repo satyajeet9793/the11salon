@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -64,6 +65,7 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden lg:flex items-center gap-4 z-50">
+            <ThemeToggle />
             <Link
               href="/admin/login"
               className="text-sm uppercase tracking-widest text-brown-dark hover:text-gold transition-colors font-bold"
@@ -112,6 +114,9 @@ export default function Navbar() {
               ))}
             </nav>
             <div className="mt-8 flex flex-col gap-4">
+              <div className="flex justify-center mb-4">
+                <ThemeToggle />
+              </div>
               <Link
                 href="/admin/login"
                 onClick={() => setMobileMenuOpen(false)}
