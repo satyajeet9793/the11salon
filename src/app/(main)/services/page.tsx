@@ -1,70 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronDown, Scissors, Clock, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Scissors, Clock, Loader2, Search, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-function AccordionItem({ category, isOpen, onToggle, services }: any) {
-  return (
-    <div className="border border-amber-500/20 rounded-xl overflow-hidden bg-white/40 backdrop-blur-sm shadow-sm transition-all duration-300">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between p-6 bg-amber-50/50 hover:bg-amber-100/50 transition-colors"
-      >
-        <h2 className="text-2xl font-semibold text-brown-dark">{category}</h2>
-        <ChevronDown 
-          className={`h-6 w-6 text-amber-600 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} 
-        />
-      </button>
-      
-      <div 
-        className={`grid transition-all duration-300 ease-in-out ${
-          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-        }`}
-      >
-        <div className="overflow-hidden">
-          <div className="p-6 pt-2 bg-white/60">
-            <ul className="divide-y divide-amber-500/10 mb-8">
-              {services.map((service: any) => (
-                <li key={service.id} className="py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-amber-50/30 transition-colors rounded-lg px-2">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-brown-dark">{service.name}</h3>
-                    {service.description && (
-                      <p className="text-brown-light text-sm mt-1">{service.description}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col sm:items-end gap-1">
-                    <span className="flex items-center text-amber-700 font-bold text-lg">
-                      ₹{service.price}
-                    </span>
-                    <span className="flex items-center text-brown-light/70 text-xs font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {service.duration} mins
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            
-            <div className="flex justify-center w-full pt-4 border-t border-amber-500/10">
-               <Link 
-                  href="/booking" 
-                  className="px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-full shadow-lg shadow-amber-600/30 transition-all hover:scale-105"
-                >
-                  Book an Appointment
-                </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function ServicesPage() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -83,53 +27,147 @@ export default function ServicesPage() {
     fetchServices();
   }, []);
 
-  const groupedServices = services.reduce((acc: any, service: any) => {
-    if (!acc[service.category]) acc[service.category] = [];
-    acc[service.category].push(service);
-    return acc;
-  }, {});
+  const categories = useMemo(() => {
+    const cats = new Set(services.map(s => s.category));
+    return ["All", ...Array.from(cats)];
+  }, [services]);
 
-  const categories = Object.keys(groupedServices);
+  const filteredServices = useMemo(() => {
+    return services.filter(service => {
+      const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            (service.description && service.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesCategory = selectedCategory === "All" || service.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [services, searchQuery, selectedCategory]);
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4">
-      <div className="max-w-4xl mx-auto space-y-12">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="flex justify-center mb-6">
-             <div className="h-16 w-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center transform rotate-12 shadow-sm">
+    <div className="min-h-screen pt-24 pb-20 px-4 bg-[#Fdfbf7]">
+      <div className="max-w-5xl mx-auto space-y-12">
+        {/* Header Section */}
+        <div className="text-center space-y-6">
+          <div className="flex justify-center">
+             <div className="h-16 w-16 bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 rounded-2xl flex items-center justify-center transform rotate-12 shadow-sm border border-amber-300/30">
               <Scissors className="h-8 w-8 -rotate-12" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-brown-dark">Our Menu</h1>
-          <p className="text-lg text-brown-light max-w-2xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 tracking-tight">Our Menu</h1>
+          <p className="text-lg text-neutral-500 max-w-2xl mx-auto font-medium">
             Explore our curated selection of premium salon and spa services.
           </p>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-12 w-12 text-amber-500 animate-spin" />
+        {/* Search & Filters */}
+        <div className="space-y-8 sticky top-20 z-40 bg-[#Fdfbf7]/80 backdrop-blur-md py-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="max-w-xl mx-auto relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-neutral-400 group-focus-within:text-amber-500 transition-colors" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search for a service... (e.g. Haircut, Facial)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-4 bg-white border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all text-lg font-medium"
+            />
           </div>
-        ) : categories.length === 0 ? (
-          <div className="text-center py-20 text-brown-light bg-white/40 rounded-xl border border-amber-200">
-            No services available at the moment. Please check back later.
+
+          <div className="flex flex-nowrap overflow-x-auto pb-2 -mb-2 gap-3 justify-start sm:justify-center no-scrollbar">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  selectedCategory === category
+                    ? "bg-neutral-900 text-white shadow-md scale-105"
+                    : "bg-white text-neutral-600 hover:bg-neutral-100 border border-neutral-200 shadow-sm"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Service Grid */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <Loader2 className="h-10 w-10 text-amber-500 animate-spin" />
+            <p className="text-neutral-400 font-medium animate-pulse">Loading premium services...</p>
+          </div>
+        ) : filteredServices.length === 0 ? (
+          <div className="text-center py-32 bg-white rounded-3xl border border-neutral-100 shadow-sm">
+            <Search className="h-12 w-12 text-neutral-300 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-neutral-900 mb-1">No services found</h3>
+            <p className="text-neutral-500">Try adjusting your search or category filter.</p>
+            <button 
+              onClick={() => {setSearchQuery(""); setSelectedCategory("All");}}
+              className="mt-6 text-amber-600 font-medium hover:text-amber-700 underline underline-offset-4"
+            >
+              Clear all filters
+            </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {categories.map((category, index) => (
-              <AccordionItem 
-                key={category}
-                category={category}
-                services={groupedServices[category]}
-                isOpen={openIndex === index}
-                onToggle={() => setOpenIndex(openIndex === index ? null : index)}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
+            {filteredServices.map((service) => (
+              <div 
+                key={service.id} 
+                className="group relative bg-white rounded-3xl p-6 border border-neutral-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] hover:border-amber-200/60 transition-all duration-300 flex flex-col justify-between overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-100/50 to-transparent rounded-bl-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="inline-block px-3 py-1 bg-neutral-100 text-neutral-600 text-xs font-bold rounded-lg tracking-wider uppercase">
+                      {service.category}
+                    </span>
+                    <span className="flex items-center text-neutral-500 text-sm font-medium bg-neutral-50 px-2.5 py-1 rounded-lg border border-neutral-100">
+                      <Clock className="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                      {service.duration}m
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-neutral-900 mb-2 leading-tight group-hover:text-amber-700 transition-colors">
+                    {service.name}
+                  </h3>
+                  
+                  {service.description && (
+                    <p className="text-neutral-500 text-sm leading-relaxed mb-6 line-clamp-3">
+                      {service.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-6 border-t border-neutral-100 mt-auto relative z-10">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-neutral-400 font-medium mb-0.5">Price</span>
+                    <span className="text-2xl font-black text-neutral-900 tracking-tight">
+                      ₹{service.price}
+                    </span>
+                  </div>
+                  <Link 
+                    href="/booking" 
+                    className="h-10 w-10 rounded-full bg-neutral-900 text-white flex items-center justify-center group-hover:bg-amber-600 transition-colors shadow-md"
+                  >
+                    <ArrowRight className="h-5 w-5 transform group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         )}
-        
       </div>
+      
+      {/* Global styling for hide scrollbar in category pills */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}} />
     </div>
   );
 }
