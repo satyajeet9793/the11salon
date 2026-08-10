@@ -4,9 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { subDays, startOfDay, endOfDay, format, addDays, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, eachHourOfInterval, setHours } from "date-fns";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
+export const revalidate = 60; // Cache for 60 seconds to prevent DB connection limits from breaking the app
 
 export async function GET(req: NextRequest) {
   try {

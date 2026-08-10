@@ -40,6 +40,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     });
 
+    if (status === "COMPLETED") {
+      const existingPayment = await prisma.payment.findUnique({
+        where: { appointmentId: id }
+      });
+      if (!existingPayment && updatedAppointment.service?.price) {
+        await prisma.payment.create({
+          data: {
+            amount: updatedAppointment.service.price,
+            method: "CASH",
+            status: "PAID",
+            appointmentId: id
+          }
+        });
+      }
+    }
+
     return NextResponse.json(updatedAppointment);
   } catch (error) {
     console.error("Error updating appointment:", error);

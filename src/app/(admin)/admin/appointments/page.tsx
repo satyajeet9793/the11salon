@@ -87,7 +87,7 @@ export default function AppointmentsPage() {
 
   const handleCompleteAppointment = async (apt: any) => {
     try {
-      // 1. Mark as completed
+      // 1. Mark as completed (Server now auto-generates invoice)
       const res = await fetch(`/api/admin/appointments/${apt.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -95,22 +95,8 @@ export default function AppointmentsPage() {
       });
       
       if (res.ok) {
-        // 2. Generate invoice automatically
-        const invoiceRes = await fetch("/api/admin/invoices", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            appointmentId: apt.id,
-            amount: apt.service?.price || 0,
-            method: "CASH",
-            status: "PAID"
-          })
-        });
-
-        if (invoiceRes.ok) {
-          fetchAppointments(selectedDate);
-          setCompletedAptId(apt.id);
-        }
+        fetchAppointments(selectedDate);
+        setCompletedAptId(apt.id);
       }
     } catch (error) {
       console.error("Failed to complete appointment", error);
