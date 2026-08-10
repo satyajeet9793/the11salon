@@ -64,29 +64,32 @@ export default function Navbar() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex items-center gap-4 z-50">
+          <div className="flex items-center gap-2 md:gap-4 z-50">
             <ThemeToggle />
-            <Link
-              href="/admin/login"
-              className="text-sm uppercase tracking-widest text-brown-dark hover:text-gold transition-colors font-bold"
-            >
-              Admin
-            </Link>
-            <Link
-              href="/booking"
-              className="bg-gold text-cream px-6 py-2.5 rounded hover:bg-gold-dark transition-colors uppercase tracking-wider text-sm font-bold shadow-sm"
-            >
-              Book Now
-            </Link>
-          </div>
+            
+            <div className="hidden lg:flex items-center gap-4">
+              <Link
+                href="/admin/login"
+                className="text-sm uppercase tracking-widest text-brown-dark hover:text-gold transition-colors font-bold"
+              >
+                Admin
+              </Link>
+              <Link
+                href="/booking"
+                className="bg-gold text-cream px-6 py-2.5 rounded hover:bg-gold-dark transition-colors uppercase tracking-wider text-sm font-bold shadow-sm"
+              >
+                Book Now
+              </Link>
+            </div>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            className="lg:hidden text-brown-dark z-50 p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
+            {/* Mobile Menu Toggle */}
+            <button
+              className="lg:hidden text-brown-dark p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -114,9 +117,6 @@ export default function Navbar() {
               ))}
             </nav>
             <div className="mt-8 flex flex-col gap-4">
-              <div className="flex justify-center mb-4">
-                <ThemeToggle />
-              </div>
               <Link
                 href="/admin/login"
                 onClick={() => setMobileMenuOpen(false)}
