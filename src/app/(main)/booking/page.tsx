@@ -12,7 +12,7 @@ export default function BookingPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   
   const [formData, setFormData] = useState({
-    serviceId: "",
+    serviceIds: [] as string[],
     date: "",
     time: "",
     name: "",
@@ -35,11 +35,12 @@ export default function BookingPage() {
   }, []);
 
   useEffect(() => {
-    if (formData.date && formData.serviceId) {
+    if (formData.date && formData.serviceIds.length > 0) {
       async function loadSlots() {
         setLoadingSlots(true);
         try {
-          const res = await fetch(`/api/booking/slots?date=${formData.date}&serviceId=${formData.serviceId}`);
+          const serviceIdsQuery = formData.serviceIds.join(',');
+          const res = await fetch(`/api/booking/slots?date=${formData.date}&serviceIds=${serviceIdsQuery}`);
           if (res.ok) {
             const data = await res.json();
             setAvailableSlots(data.slots || []);
@@ -52,9 +53,9 @@ export default function BookingPage() {
       }
       loadSlots();
     }
-  }, [formData.date, formData.serviceId]);
+  }, [formData.date, formData.serviceIds]);
 
-  const selectedService = services.find(s => s.id === formData.serviceId);
+  const selectedServices = services.filter(s => formData.serviceIds.includes(s.id));
 
   const handleNext = () => setStep(s => Math.min(s + 1, 4));
   const handlePrev = () => setStep(s => Math.max(s - 1, 1));
@@ -87,7 +88,7 @@ export default function BookingPage() {
           </div>
           <h2 className="text-3xl font-serif text-ochre mb-4">Booking Confirmed!</h2>
           <p className="text-brown-light mb-6 font-medium">
-            Your appointment for {selectedService?.name} on {formData.date} at {formData.time} has been successfully scheduled.
+            Your appointment for {selectedServices.map(s => s.name).join(', ')} on {formData.date} at {formData.time} has been successfully scheduled.
           </p>
           <button 
             onClick={() => window.location.href = "/"}
@@ -131,12 +132,22 @@ export default function BookingPage() {
               <h2 className="text-3xl font-serif text-ochre mb-8">Select Service</h2>
               {services.length === 0 ? <p className="text-brown-light font-bold">Loading services...</p> : (
                 <div className="grid sm:grid-cols-2 gap-4 h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                  {services.map(service => (
+                  {services.map(service => {
+                    const isSelected = formData.serviceIds.includes(service.id);
+                    return (
                     <div 
                       key={service.id}
-                      onClick={() => setFormData({ ...formData, serviceId: service.id, date: "", time: "" })}
+                      onClick={() => {
+                        let newIds = [...formData.serviceIds];
+                        if (isSelected) {
+                          newIds = newIds.filter(id => id !== service.id);
+                        } else {
+                          newIds.push(service.id);
+                        }
+                        setFormData({ ...formData, serviceIds: newIds, date: "", time: "" });
+                      }}
                       className={`p-6 rounded-lg cursor-pointer border transition-all shadow-sm ${
-                        formData.serviceId === service.id 
+                        isSelected 
                           ? 'bg-gold/10 border-gold shadow-[0_0_15px_rgba(212,175,55,0.2)]' 
                           : 'bg-white border-brown-dark/5 hover:border-gold/30'
                       }`}
@@ -147,7 +158,7 @@ export default function BookingPage() {
                         <span className="text-gold">₹{service.price}</span>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>
@@ -303,7 +314,7 @@ export default function BookingPage() {
             <button 
               onClick={handleNext}
               disabled={
-                (step === 1 && !formData.serviceId) ||
+                (step === 1 && formData.serviceIds.length === 0) ||
                 (step === 2 && (!formData.date || !formData.time)) ||
                 (step === 3 && (!formData.name || !formData.phone))
               }

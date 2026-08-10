@@ -7,26 +7,28 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const dateStr = searchParams.get('date');
-    const serviceId = searchParams.get('serviceId');
+    const serviceIdsParam = searchParams.get('serviceIds');
 
-    if (!dateStr || !serviceId) {
-      return NextResponse.json({ error: "Date and Service ID are required" }, { status: 400 });
+    if (!dateStr || !serviceIdsParam) {
+      return NextResponse.json({ error: "Date and Service IDs are required" }, { status: 400 });
     }
+
+    const serviceIds = serviceIdsParam.split(',');
 
     const requestedDate = new Date(dateStr);
     const dayStart = startOfDay(requestedDate);
     const dayEnd = endOfDay(requestedDate);
 
     // Get service details for duration
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId }
+    const services = await prisma.service.findMany({
+      where: { id: { in: serviceIds } }
     });
 
-    if (!service) {
-      return NextResponse.json({ error: "Service not found" }, { status: 404 });
+    if (services.length === 0) {
+      return NextResponse.json({ error: "Services not found" }, { status: 404 });
     }
 
-    const serviceDuration = service.duration; // in minutes
+    const serviceDuration = services.reduce((acc, s) => acc + s.duration, 0); // in minutes
 
     // Salon hours (e.g., 9:00 AM to 8:00 PM)
     // You can also pull this from Settings table in the future

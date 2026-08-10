@@ -42,17 +42,17 @@ export default function ServicesPage() {
   }, [services, searchQuery, selectedCategory]);
 
   return (
-    <div className="min-h-screen pt-24 pb-20 px-4 bg-[#Fdfbf7]">
+    <div className="min-h-screen pt-24 pb-20 px-4 bg-gradient-to-br from-[#fff7ed] to-[#ffedd5]">
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Header Section */}
         <div className="text-center space-y-6">
           <div className="flex justify-center">
-             <div className="h-16 w-16 bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 rounded-2xl flex items-center justify-center transform rotate-12 shadow-sm border border-amber-300/30">
+             <div className="h-16 w-16 bg-gradient-to-br from-amber-200 to-amber-300 text-amber-800 rounded-2xl flex items-center justify-center transform rotate-12 shadow-sm border border-amber-400/30">
               <Scissors className="h-8 w-8 -rotate-12" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 tracking-tight">Our Menu</h1>
-          <p className="text-lg text-neutral-500 max-w-2xl mx-auto font-medium">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-amber-950 tracking-tight">Our Menu</h1>
+          <p className="text-lg text-amber-800/80 max-w-2xl mx-auto font-sans font-medium">
             Explore our curated selection of premium salon and spa services.
           </p>
         </div>

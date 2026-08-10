@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, phone, notes, serviceId, date, time } = body;
+    const { name, phone, notes, serviceIds, date, time } = body;
 
-    if (!name || !phone || !serviceId || !date || !time) {
+    if (!name || !phone || !serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0 || !date || !time) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -20,8 +20,6 @@ export async function POST(req: NextRequest) {
         data: { name, phone }
       });
     } else {
-      // Update name if different and increment visit count? 
-      // Actually we'll increment visit count on completion.
       if (customer.name !== name) {
         customer = await prisma.customer.update({
           where: { id: customer.id },
@@ -30,34 +28,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Get Service Duration
-    const service = await prisma.service.findUnique({ where: { id: serviceId } });
-    if (!service) return NextResponse.json({ error: "Service not found" }, { status: 404 });
+    // 2. Get Service Durations
+    const services = await prisma.service.findMany({ where: { id: { in: serviceIds } } });
+    if (services.length === 0) return NextResponse.json({ error: "Services not found" }, { status: 404 });
 
-    // 3. Create the appointment
-    const appointment = await prisma.appointment.create({
-      data: {
-        date: new Date(date),
-        timeSlot: time,
-        duration: service.duration,
-        status: "BOOKED",
-        notes,
-        customerId: customer.id,
-        serviceId: service.id,
-      }
+    // 3. Create the appointments in a transaction
+    const appointmentsData = services.map(service => ({
+      date: new Date(date),
+      timeSlot: time,
+      duration: service.duration,
+      status: "BOOKED" as const,
+      notes,
+      customerId: customer.id,
+      serviceId: service.id,
+    }));
+
+    await prisma.appointment.createMany({
+      data: appointmentsData
     });
 
     // 4. Create an Admin Notification
+    const serviceNames = services.map(s => s.name).join(", ");
     await prisma.notification.create({
       data: {
         type: "ADMIN_ALERT",
         recipient: "ADMIN",
-        content: `New booking received from ${name} for ${service.name} on ${date} at ${time}.`,
+        content: `New booking received from ${name} for ${serviceNames} on ${date} at ${time}.`,
         status: "UNREAD"
       }
     });
 
-    return NextResponse.json({ success: true, appointmentId: appointment.id }, { status: 201 });
+    return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     console.error("Error processing booking:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
