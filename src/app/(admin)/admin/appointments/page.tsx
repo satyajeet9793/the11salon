@@ -119,6 +119,10 @@ export default function AppointmentsPage() {
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.serviceIds.length === 0) {
+      alert("Please select at least one service.");
+      return;
+    }
     try {
       const res = await fetch("/api/admin/appointments", {
         method: "POST",
@@ -354,7 +358,7 @@ export default function AppointmentsPage() {
                 <div className="space-y-1 relative">
                   <label className="text-sm font-medium text-neutral-700">Service *</label>
                   <input 
-                    type="text" required
+                    type="text"
                     placeholder="Search for a service"
                     value={serviceSearch} 
                     onFocus={() => setShowServiceSuggestions(true)}
@@ -412,8 +416,6 @@ export default function AppointmentsPage() {
                       )}
                     </div>
                   )}
-                  {/* Hidden required input so form submission validates it */}
-                  <input type="text" required className="hidden" value={formData.serviceIds.length > 0 ? "selected" : ""} readOnly />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-neutral-700">Date *</label>
