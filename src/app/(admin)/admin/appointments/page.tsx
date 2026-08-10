@@ -24,7 +24,8 @@ export default function AppointmentsPage() {
     date: "",
     timeSlot: "",
     notes: "",
-    membershipYears: ""
+    membershipYears: "",
+    customPrice: ""
   });
 
   useEffect(() => {
@@ -434,6 +435,16 @@ export default function AppointmentsPage() {
                     <option value="3">3 Years</option>
                     <option value="5">5 Years</option>
                   </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-neutral-700">Custom Total Amount (Optional)</label>
+                  <input 
+                    type="number" 
+                    placeholder="e.g. 1500"
+                    value={formData.customPrice} onChange={e => setFormData({...formData, customPrice: e.target.value})}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">Overrides the default service total.</p>
                 </div>
                 <div className="space-y-1 md:col-span-2">
                   <label className="text-sm font-medium text-neutral-700">Notes</label>

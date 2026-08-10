@@ -81,6 +81,7 @@ model Appointment {
   duration      Int      @default(60)
   status        String   @default("PENDING") // PENDING, BOOKED, CHECKED_IN, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
   notes         String?
+  customPrice   Float?   // Override default service price if not null
   
   arrivalTime   DateTime?
   serviceStartTime DateTime?

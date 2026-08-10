@@ -44,10 +44,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const existingPayment = await prisma.payment.findUnique({
         where: { appointmentId: id }
       });
-      if (!existingPayment && updatedAppointment.service?.price) {
+      
+      const finalPrice = updatedAppointment.customPrice !== null 
+        ? updatedAppointment.customPrice 
+        : updatedAppointment.service?.price;
+
+      if (!existingPayment && finalPrice !== undefined && finalPrice !== null) {
         await prisma.payment.create({
           data: {
-            amount: updatedAppointment.service.price,
+            amount: finalPrice,
             method: "CASH",
             status: "PAID",
             appointmentId: id

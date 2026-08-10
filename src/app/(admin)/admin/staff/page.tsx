@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Scissors, Phone, Star, TrendingUp } from "lucide-react";
+import { Plus, Scissors, Phone, Star, Edit2, Trash2, Calendar } from "lucide-react";
 
 export default function StaffPage() {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -37,21 +38,58 @@ export default function StaffPage() {
     }
   };
 
+  const openAddModal = () => {
+    setEditingId(null);
+    setFormData({ name: "", role: "Stylist", phone: "", skills: "", salary: "", joiningDate: "", isAvailable: true });
+    setShowModal(true);
+  };
+
+  const openEditModal = (member: any) => {
+    setEditingId(member.id);
+    setFormData({
+      name: member.name,
+      role: member.role,
+      phone: member.phone || "",
+      skills: member.skills || "",
+      salary: member.salary || "",
+      joiningDate: member.joiningDate ? member.joiningDate.split("T")[0] : "",
+      isAvailable: member.isAvailable
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      try {
+        const res = await fetch(`/api/admin/staff/${id}`, {
+          method: "DELETE"
+        });
+        if (res.ok) {
+          fetchStaff();
+        }
+      } catch (error) {
+        console.error("Failed to delete staff", error);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/admin/staff", {
-        method: "POST",
+      const url = editingId ? `/api/admin/staff/${editingId}` : "/api/admin/staff";
+      const method = editingId ? "PATCH" : "POST";
+      
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
         setShowModal(false);
-        setFormData({ name: "", role: "Stylist", phone: "", skills: "", salary: "", joiningDate: "", isAvailable: true });
         fetchStaff();
       }
     } catch (error) {
-      console.error("Error creating staff", error);
+      console.error("Error saving staff", error);
     }
   };
 
@@ -63,71 +101,92 @@ export default function StaffPage() {
           <p className="text-neutral-500 mt-1">Manage your team, track performance and availability.</p>
         </div>
         <button 
-          onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-neutral-900 font-medium rounded-lg transition-colors shadow-sm"
+          onClick={openAddModal}
+          className="flex items-center px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-medium rounded-xl transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
         >
           <Plus className="h-5 w-5 mr-2" />
           Add Staff Member
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {loading ? (
           <div className="col-span-full py-12 text-center text-neutral-500">Loading staff directory...</div>
         ) : staff.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-neutral-500 bg-white rounded-2xl border border-neutral-200">
-            No staff members found. Add your first team member.
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-neutral-100 shadow-sm">
+            <div className="h-24 w-24 bg-amber-50 rounded-full flex items-center justify-center mb-6">
+              <Scissors className="h-10 w-10 text-amber-500" />
+            </div>
+            <h3 className="text-xl font-bold text-neutral-900 mb-2">No Staff Found</h3>
+            <p className="text-neutral-500 max-w-sm mb-6">Your team is the heart of the salon. Start by adding your first stylist or staff member here.</p>
+            <button 
+              onClick={openAddModal}
+              className="px-6 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors font-medium shadow-md"
+            >
+              Add First Member
+            </button>
           </div>
         ) : (
           staff.map((member: any) => (
-            <div key={member.id} className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden flex flex-col">
-              <div className="p-6 flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-xl font-bold">
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-neutral-900">{member.name}</h3>
-                      <p className="text-sm font-medium text-amber-600">{member.role}</p>
-                    </div>
+            <div key={member.id} className="group bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col relative transform hover:-translate-y-1">
+              {/* Decorative top bar */}
+              <div className={`h-2 w-full ${member.isAvailable ? 'bg-gradient-to-r from-green-400 to-green-500' : 'bg-gradient-to-r from-red-400 to-red-500'}`}></div>
+              
+              <div className="p-6 flex-1 flex flex-col relative">
+                
+                {/* Actions (visible on hover) */}
+                <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button 
+                    onClick={() => openEditModal(member)}
+                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-neutral-600 hover:text-blue-600 hover:bg-blue-50 shadow-sm border border-neutral-100 transition-colors"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(member.id, member.name)}
+                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full text-neutral-600 hover:text-red-600 hover:bg-red-50 shadow-sm border border-neutral-100 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex flex-col items-center mb-5 mt-2">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-800 text-2xl font-bold shadow-inner mb-3 border-4 border-white ring-1 ring-neutral-100">
+                    {member.name.charAt(0).toUpperCase()}
                   </div>
-                  <div className={`px-2.5 py-1 text-xs font-medium rounded-full ${member.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {member.isAvailable ? 'Available' : 'Unavailable'}
+                  <h3 className="text-xl font-bold text-neutral-900">{member.name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-sm font-medium text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">{member.role}</span>
+                    <span className={`h-2 w-2 rounded-full ${member.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></span>
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-3 mb-6 bg-neutral-50/50 p-4 rounded-xl flex-1 border border-neutral-50">
                   <div className="flex items-center text-sm text-neutral-600">
                     <Phone className="h-4 w-4 mr-3 text-neutral-400" />
                     {member.phone || 'No phone added'}
                   </div>
                   <div className="flex items-center text-sm text-neutral-600">
                     <Scissors className="h-4 w-4 mr-3 text-neutral-400" />
-                    {member.skills || 'General Styling'}
+                    <span className="truncate">{member.skills || 'General Styling'}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-100">
-                  <div>
-                    <p className="text-xs text-neutral-500 mb-1">Completed</p>
-                    <p className="text-lg font-semibold text-neutral-900 flex items-center">
+                <div className="grid grid-cols-2 gap-2 mt-auto">
+                  <div className="bg-neutral-50 rounded-lg p-3 text-center border border-neutral-100 transition-colors group-hover:border-amber-100">
+                    <p className="text-xs text-neutral-500 mb-1">Services</p>
+                    <p className="text-lg font-bold text-neutral-900">
                       {member.appointments?.length || 0}
-                      <span className="text-xs font-normal text-neutral-500 ml-1">services</span>
                     </p>
                   </div>
-                  <div>
+                  <div className="bg-neutral-50 rounded-lg p-3 text-center border border-neutral-100 transition-colors group-hover:border-amber-100">
                     <p className="text-xs text-neutral-500 mb-1">Rating</p>
-                    <p className="text-lg font-semibold text-neutral-900 flex items-center">
+                    <p className="text-lg font-bold text-neutral-900 flex items-center justify-center">
                       4.8
                       <Star className="h-4 w-4 text-amber-500 fill-amber-500 ml-1" />
                     </p>
                   </div>
                 </div>
-              </div>
-              <div className="px-6 py-3 bg-neutral-50 border-t border-neutral-200 flex justify-between items-center">
-                <button className="text-sm font-medium text-neutral-600 hover:text-amber-600 transition-colors">Edit Profile</button>
-                <button className="text-sm font-medium text-neutral-600 hover:text-amber-600 transition-colors">View Schedule</button>
               </div>
             </div>
           ))
@@ -135,98 +194,100 @@ export default function StaffPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-neutral-900">Add Staff Member</h2>
-              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-neutral-600">✕</button>
+        <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+              <h2 className="text-xl font-bold text-neutral-900">{editingId ? 'Edit Staff Member' : 'Add Staff Member'}</h2>
+              <button onClick={() => setShowModal(false)} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-neutral-200 text-neutral-500 transition-colors">✕</button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-sm font-medium text-neutral-700">Full Name *</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-sm font-semibold text-neutral-700">Full Name *</label>
                   <input 
                     type="text" required
                     value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Role</label>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-neutral-700">Role *</label>
                   <select 
+                    required
                     value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
                   >
-                    <option value="Senior Stylist">Senior Stylist</option>
                     <option value="Stylist">Stylist</option>
-                    <option value="Barber">Barber</option>
-                    <option value="Beautician">Beautician</option>
+                    <option value="Senior Stylist">Senior Stylist</option>
+                    <option value="Colorist">Colorist</option>
+                    <option value="Therapist">Therapist</option>
                     <option value="Manager">Manager</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Phone</label>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-neutral-700">Phone</label>
                   <input 
-                    type="tel"
+                    type="text" 
                     value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
                   />
                 </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-sm font-medium text-neutral-700">Skills (Comma separated)</label>
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-sm font-semibold text-neutral-700">Skills (comma separated)</label>
                   <input 
-                    type="text"
-                    placeholder="e.g. Haircut, Coloring, Keratin"
+                    type="text" 
+                    placeholder="e.g. Haircut, Coloring, Highlights"
                     value={formData.skills} onChange={e => setFormData({...formData, skills: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Salary</label>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-neutral-700">Base Salary / Month</label>
                   <input 
-                    type="number"
+                    type="number" 
                     value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Joining Date</label>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-neutral-700">Joining Date</label>
                   <input 
-                    type="date"
+                    type="date" 
                     value={formData.joiningDate} onChange={e => setFormData({...formData, joiningDate: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all"
                   />
+                </div>
+                <div className="md:col-span-2 pt-2">
+                  <label className="flex items-center space-x-3 p-3 bg-neutral-50 rounded-xl border border-neutral-200 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.isAvailable} 
+                      onChange={e => setFormData({...formData, isAvailable: e.target.checked})}
+                      className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 border-neutral-300"
+                    />
+                    <div>
+                      <span className="text-sm font-semibold text-neutral-900 block">Available for Booking</span>
+                      <span className="text-xs text-neutral-500">Uncheck if the staff member is on leave</span>
+                    </div>
+                  </label>
                 </div>
               </div>
               
-              <div className="mt-6 flex items-center justify-between">
-                <label className="flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={formData.isAvailable} 
-                    onChange={e => setFormData({...formData, isAvailable: e.target.checked})}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                  <span className="ml-3 text-sm font-medium text-neutral-700">Available for Booking</span>
-                </label>
-
-                <div className="flex gap-3">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    className="px-4 py-2 bg-amber-500 text-neutral-900 rounded-lg hover:bg-amber-600 transition-colors font-medium"
-                  >
-                    Save Staff
-                  </button>
-                </div>
+              <div className="mt-8 flex justify-end gap-3 pt-6 border-t border-neutral-100">
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)}
+                  className="px-5 py-2.5 text-neutral-700 font-medium hover:bg-neutral-100 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-6 py-2.5 bg-neutral-900 text-white font-medium hover:bg-neutral-800 rounded-xl transition-colors shadow-sm"
+                >
+                  {editingId ? 'Save Changes' : 'Add Staff'}
+                </button>
               </div>
             </form>
           </div>

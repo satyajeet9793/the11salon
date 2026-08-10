@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    let { customerId, customerName, customerPhone, customerDob, serviceIds, serviceId, staffId, date, timeSlot, notes, membershipYears } = body;
+    let { customerId, customerName, customerPhone, customerDob, serviceIds, serviceId, staffId, date, timeSlot, notes, membershipYears, customPrice } = body;
 
     // Support both single serviceId (legacy) and serviceIds (array)
     const servicesToCreate = serviceIds || (serviceId ? [serviceId] : []);
@@ -111,9 +111,22 @@ export async function POST(req: NextRequest) {
     if (!customerId) return NextResponse.json({ error: "Customer details missing" }, { status: 400 });
 
     const createdAppointments = [];
+    let isFirstAppointment = true;
+    const parsedCustomPrice = customPrice !== undefined && customPrice !== null && customPrice !== "" ? parseFloat(customPrice) : null;
+
     for (const sid of servicesToCreate) {
       const service = await prisma.service.findUnique({ where: { id: sid } });
       if (!service) continue; // Skip invalid services
+
+      let appliedCustomPrice = null;
+      if (parsedCustomPrice !== null) {
+        if (isFirstAppointment) {
+          appliedCustomPrice = parsedCustomPrice;
+          isFirstAppointment = false;
+        } else {
+          appliedCustomPrice = 0;
+        }
+      }
 
       const appointment = await prisma.appointment.create({
         data: {
@@ -122,6 +135,7 @@ export async function POST(req: NextRequest) {
           duration: service.duration,
           status: "CHECKED_IN",
           notes,
+          customPrice: appliedCustomPrice,
           customerId,
           serviceId: sid,
           staffId: staffId || null,
