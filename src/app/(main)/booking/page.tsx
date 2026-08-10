@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, ChevronRight, ChevronLeft, Clock, MessageCircle } from "lucide-react";
+import { CheckCircle2, ChevronRight, ChevronLeft, Clock, MessageCircle, Search } from "lucide-react";
 import { format, addDays } from "date-fns";
 
 export default function BookingPage() {
@@ -10,6 +10,7 @@ export default function BookingPage() {
   const [services, setServices] = useState<any[]>([]);
   const [availableSlots, setAvailableSlots] = useState<{time: string, available: boolean}[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState("");
   
   const [formData, setFormData] = useState({
     serviceIds: [] as string[],
@@ -129,10 +130,24 @@ export default function BookingPage() {
           {/* STEP 1: SERVICE SELECTION */}
           {step === 1 && (
             <div className="space-y-6">
-              <h2 className="text-3xl font-serif text-ochre mb-8">Select Service</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <h2 className="text-3xl font-serif text-ochre">Select Service</h2>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-brown-dark/40" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search services..."
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                    className="pl-10 pr-4 py-2 bg-white/50 border border-brown-dark/10 rounded-full text-brown-dark placeholder:text-brown-dark/40 focus:outline-none focus:ring-2 focus:ring-gold/30 transition-all w-full sm:w-64"
+                  />
+                </div>
+              </div>
               {services.length === 0 ? <p className="text-brown-light font-bold">Loading services...</p> : (
                 <div className="grid sm:grid-cols-2 gap-4 h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                  {services.map(service => {
+                  {services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase())).map(service => {
                     const isSelected = formData.serviceIds.includes(service.id);
                     return (
                     <div 
