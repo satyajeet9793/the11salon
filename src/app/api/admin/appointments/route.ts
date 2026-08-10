@@ -56,7 +56,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    let { customerId, customerName, customerPhone, customerDob, serviceId, staffId, date, timeSlot, notes, membershipYears } = body;
+    let { customerId, customerName, customerPhone, customerDob, serviceIds, serviceId, staffId, date, timeSlot, notes, membershipYears } = body;
+
+    // Support both single serviceId (legacy) and serviceIds (array)
+    const servicesToCreate = serviceIds || (serviceId ? [serviceId] : []);
+    if (servicesToCreate.length === 0) {
+      return NextResponse.json({ error: "At least one service must be selected" }, { status: 400 });
+    }
 
     let dobDate = customerDob ? new Date(customerDob) : null;
 
@@ -104,28 +110,36 @@ export async function POST(req: NextRequest) {
 
     if (!customerId) return NextResponse.json({ error: "Customer details missing" }, { status: 400 });
 
-    const service = await prisma.service.findUnique({ where: { id: serviceId } });
-    if (!service) return NextResponse.json({ error: "Service not found" }, { status: 404 });
+    const createdAppointments = [];
+    for (const sid of servicesToCreate) {
+      const service = await prisma.service.findUnique({ where: { id: sid } });
+      if (!service) continue; // Skip invalid services
 
-    const appointment = await prisma.appointment.create({
-      data: {
-        date: new Date(date),
-        timeSlot,
-        duration: service.duration,
-        status: "CHECKED_IN",
-        notes,
-        customerId,
-        serviceId,
-        staffId: staffId || null,
-      },
-      include: {
-        customer: true,
-        service: true,
-        staff: true
-      }
-    });
+      const appointment = await prisma.appointment.create({
+        data: {
+          date: new Date(date),
+          timeSlot,
+          duration: service.duration,
+          status: "CHECKED_IN",
+          notes,
+          customerId,
+          serviceId: sid,
+          staffId: staffId || null,
+        },
+        include: {
+          customer: true,
+          service: true,
+          staff: true
+        }
+      });
+      createdAppointments.push(appointment);
+    }
 
-    return NextResponse.json(appointment, { status: 201 });
+    if (createdAppointments.length === 0) {
+      return NextResponse.json({ error: "No valid services found" }, { status: 404 });
+    }
+
+    return NextResponse.json(createdAppointments, { status: 201 });
   } catch (error) {
     console.error("Error creating appointment:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

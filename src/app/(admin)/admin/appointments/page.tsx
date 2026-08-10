@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Clock, Search, Calendar as CalendarIcon, CheckCircle2, PlayCircle, MapPin, AlertCircle, Trash2 } from "lucide-react";
+import { Plus, Clock, Search, Calendar as CalendarIcon, CheckCircle2, PlayCircle, MapPin, AlertCircle, Trash2, X } from "lucide-react";
 import { format, parseISO, startOfToday, addDays, subDays } from "date-fns";
 
 export default function AppointmentsPage() {
@@ -20,7 +20,7 @@ export default function AppointmentsPage() {
     customerName: "",
     customerPhone: "",
     customerDob: "",
-    serviceId: "",
+    serviceIds: [] as string[],
     date: "",
     timeSlot: "",
     notes: "",
@@ -127,7 +127,7 @@ export default function AppointmentsPage() {
       });
       if (res.ok) {
         setShowModal(false);
-        setFormData({ customerName: "", customerPhone: "", customerDob: "", serviceId: "", date: "", timeSlot: "", notes: "", membershipYears: "" });
+        setFormData({ customerName: "", customerPhone: "", customerDob: "", serviceIds: [], date: "", timeSlot: "", notes: "", membershipYears: "" });
         setServiceSearch("");
         fetchAppointments(selectedDate);
       } else {
@@ -362,10 +362,30 @@ export default function AppointmentsPage() {
                     onChange={e => {
                       setServiceSearch(e.target.value);
                       setShowServiceSuggestions(true);
-                      setFormData({...formData, serviceId: ""}); // Reset selected service ID when typing
                     }}
                     className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
                   />
+                  {/* Selected Services Chips */}
+                  {formData.serviceIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.serviceIds.map(sid => {
+                        const s = services.find(srv => srv.id === sid);
+                        if (!s) return null;
+                        return (
+                          <div key={sid} className="flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-md text-sm font-medium">
+                            {s.name}
+                            <button
+                              type="button"
+                              onClick={() => setFormData({ ...formData, serviceIds: formData.serviceIds.filter(id => id !== sid) })}
+                              className="text-amber-600 hover:text-amber-900 focus:outline-none"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   {showServiceSuggestions && (
                     <div className="absolute top-[calc(100%-0.25rem)] left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
                       {services
@@ -375,11 +395,13 @@ export default function AppointmentsPage() {
                             key={s.id}
                             onMouseDown={(e) => {
                               e.preventDefault();
-                              setFormData({ ...formData, serviceId: s.id });
-                              setServiceSearch(`${s.name} - ₹${s.price}`);
+                              if (!formData.serviceIds.includes(s.id)) {
+                                setFormData({ ...formData, serviceIds: [...formData.serviceIds, s.id] });
+                              }
+                              setServiceSearch("");
                               setShowServiceSuggestions(false);
                             }}
-                            className={`px-4 py-2 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0 ${formData.serviceId === s.id ? 'bg-amber-50' : ''}`}
+                            className={`px-4 py-2 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0 ${formData.serviceIds.includes(s.id) ? 'bg-amber-50' : ''}`}
                           >
                             <div className="font-medium text-neutral-900">{s.name}</div>
                             <div className="text-xs text-neutral-500">₹{s.price}</div>
@@ -391,7 +413,7 @@ export default function AppointmentsPage() {
                     </div>
                   )}
                   {/* Hidden required input so form submission validates it */}
-                  <input type="text" required className="hidden" value={formData.serviceId} readOnly />
+                  <input type="text" required className="hidden" value={formData.serviceIds.length > 0 ? "selected" : ""} readOnly />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-neutral-700">Date *</label>
