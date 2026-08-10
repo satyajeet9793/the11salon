@@ -135,7 +135,8 @@ export default function AppointmentsPage() {
         setServiceSearch("");
         fetchAppointments(selectedDate);
       } else {
-        alert("Failed to create appointment.");
+        const errorData = await res.json().catch(() => null);
+        alert(`Failed to create appointment: ${errorData?.error || res.statusText || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Error creating appointment", error);
