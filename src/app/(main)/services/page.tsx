@@ -58,7 +58,7 @@ export default function ServicesPage() {
         </div>
 
         {/* Search & Filters */}
-        <div className="space-y-8 sticky top-20 z-40 bg-[#Fdfbf7]/80 backdrop-blur-md py-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="space-y-8 sticky top-20 z-40 bg-[#fff7ed]/90 backdrop-blur-md py-4 -mx-4 px-4 sm:mx-0 sm:px-0">
           <div className="max-w-xl mx-auto relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-neutral-400 group-focus-within:text-amber-500 transition-colors" />
@@ -72,7 +72,7 @@ export default function ServicesPage() {
             />
           </div>
 
-          <div className="flex flex-nowrap overflow-x-auto pb-2 -mb-2 gap-3 justify-start sm:justify-center no-scrollbar">
+          <div className="flex flex-wrap gap-3 justify-center">
             {categories.map((category) => (
               <button
                 key={category}
