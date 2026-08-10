@@ -362,6 +362,7 @@ export default function AppointmentsPage() {
                     placeholder="Search for a service"
                     value={serviceSearch} 
                     onFocus={() => setShowServiceSuggestions(true)}
+                    onClick={() => setShowServiceSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowServiceSuggestions(false), 200)}
                     onChange={e => {
                       setServiceSearch(e.target.value);
