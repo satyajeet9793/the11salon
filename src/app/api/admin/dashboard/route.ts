@@ -14,8 +14,9 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const timeSpan = searchParams.get('timeSpan') || 'today'; // today, week, month, 6months, custom
+    const timeSpan = searchParams.get('timeSpan') || 'today'; // today, week, month, 6months, custom, customMonth
     const customDateParam = searchParams.get('date');
+    const customMonthParam = searchParams.get('month');
 
     const now = new Date();
     let startDate = startOfDay(now);
@@ -31,6 +32,11 @@ export async function GET(req: NextRequest) {
       const customDate = new Date(customDateParam);
       startDate = startOfDay(customDate);
       endDate = endOfDay(customDate);
+    } else if (timeSpan === 'customMonth' && customMonthParam) {
+      const [year, month] = customMonthParam.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+      startDate = startOfMonth(date);
+      endDate = endOfMonth(date);
     }
 
     // 1. New Customers
@@ -130,7 +136,7 @@ export async function GET(req: NextRequest) {
           dateEnd: hourEnd.toISOString()
         });
       });
-    } else if (timeSpan === 'week' || timeSpan === 'month') {
+    } else if (timeSpan === 'week' || timeSpan === 'month' || timeSpan === 'customMonth') {
       // Group by day
       const days = eachDayOfInterval({ start: startDate, end: endDate });
       days.forEach(day => {

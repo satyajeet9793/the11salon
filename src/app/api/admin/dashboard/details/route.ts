@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
-import { subDays, startOfDay, endOfDay, subMonths, startOfMonth } from "date-fns";
+import { subDays, startOfDay, endOfDay, subMonths, startOfMonth, endOfMonth } from "date-fns";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -37,6 +37,17 @@ export async function GET(req: NextRequest) {
         const customDate = customDateParam ? new Date(customDateParam) : now;
         startDate = startOfDay(customDate);
         endDate = endOfDay(customDate);
+      } else if (timeSpan === 'customMonth') {
+        const customMonthParam = searchParams.get('month');
+        if (customMonthParam) {
+          const [year, month] = customMonthParam.split('-');
+          const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+          startDate = startOfMonth(date);
+          endDate = endOfMonth(date);
+        } else {
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+        }
       } else {
         startDate = startOfDay(now); // today
       }

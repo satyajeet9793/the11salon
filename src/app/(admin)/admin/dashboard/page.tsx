@@ -29,6 +29,7 @@ import Link from "next/link";
 export default function DashboardPage() {
   const [timeSpan, setTimeSpan] = useState('today');
   const [customDate, setCustomDate] = useState("");
+  const [customMonth, setCustomMonth] = useState("");
   const [stats, setStats] = useState({
     revenue: 0,
     customers: 0,
@@ -52,6 +53,8 @@ export default function DashboardPage() {
     try {
       const query = timeSpan === 'custom' && customDate 
         ? `timeSpan=custom&date=${customDate}`
+        : timeSpan === 'customMonth' && customMonth
+        ? `timeSpan=customMonth&month=${customMonth}`
         : `timeSpan=${timeSpan}`;
       const res = await fetch(`/api/admin/dashboard?${query}`);
       if (res.ok) {
@@ -68,10 +71,14 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (timeSpan !== 'custom' || (timeSpan === 'custom' && customDate)) {
+    if (
+      (timeSpan !== 'custom' && timeSpan !== 'customMonth') || 
+      (timeSpan === 'custom' && customDate) || 
+      (timeSpan === 'customMonth' && customMonth)
+    ) {
       fetchDashboard();
     }
-  }, [timeSpan, customDate]);
+  }, [timeSpan, customDate, customMonth]);
 
   // Click handler for Charts (Specific Time Range)
   const handleChartClick = async (data: any, type: 'REVENUE' | 'COMPLETED') => {
@@ -107,6 +114,8 @@ export default function DashboardPage() {
     try {
       const query = timeSpan === 'custom' && customDate 
         ? `timeSpan=custom&date=${customDate}`
+        : timeSpan === 'customMonth' && customMonth
+        ? `timeSpan=customMonth&month=${customMonth}`
         : `timeSpan=${timeSpan}`;
       const res = await fetch(`/api/admin/dashboard/details?${query}`);
       if (res.ok) {
@@ -161,7 +170,8 @@ export default function DashboardPage() {
     week: "This Week",
     month: "This Month",
     '6months': "Last 6 Months",
-    custom: "Custom Date"
+    custom: "Custom Date",
+    customMonth: "Custom Month"
   };
 
   return (
@@ -188,7 +198,7 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-          <div className="relative">
+          <div className="flex gap-2 relative">
             <input 
               type="date"
               value={customDate}
@@ -198,6 +208,16 @@ export default function DashboardPage() {
               }}
               className={`px-3 py-2 text-sm font-medium border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-colors ${timeSpan === 'custom' ? 'border-amber-500 bg-amber-500 text-white' : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'}`}
               title="Select Custom Date"
+            />
+            <input 
+              type="month"
+              value={customMonth}
+              onChange={(e) => {
+                setCustomMonth(e.target.value);
+                if (e.target.value) setTimeSpan('customMonth');
+              }}
+              className={`px-3 py-2 text-sm font-medium border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-colors ${timeSpan === 'customMonth' ? 'border-amber-500 bg-amber-500 text-white' : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'}`}
+              title="Select Custom Month"
             />
           </div>
         </div>
