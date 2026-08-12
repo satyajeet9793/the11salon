@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -65,8 +64,7 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2 md:gap-4 z-50">
-            <ThemeToggle />
-            
+
             <div className="hidden lg:flex items-center gap-4">
               <Link
                 href="/admin/login"
