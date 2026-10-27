@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
       startDate = startOfDay(subDays(now, 29)); // Last 30 days
     } else if (timeSpan === '6months') {
       startDate = startOfMonth(subMonths(now, 5)); // Last 6 months
+    } else if (timeSpan === 'all') {
+      startDate = new Date(0); // All time
     } else if (timeSpan === 'custom' && customDateParam) {
       const customDate = new Date(customDateParam);
       startDate = startOfDay(customDate);
@@ -156,9 +158,14 @@ export async function GET(req: NextRequest) {
           dateEnd: dayEnd.toISOString()
         });
       });
-    } else if (timeSpan === '6months') {
+    } else if (timeSpan === '6months' || timeSpan === 'all') {
       // Group by month
-      const months = eachMonthOfInterval({ start: startDate, end: endDate });
+      let chartStartDate = startDate;
+      if (timeSpan === 'all') {
+        const firstPayment = await prisma.payment.findFirst({ orderBy: { createdAt: 'asc' } });
+        chartStartDate = firstPayment ? startOfMonth(new Date(firstPayment.createdAt)) : startOfMonth(subMonths(now, 11));
+      }
+      const months = eachMonthOfInterval({ start: chartStartDate, end: endDate });
       months.forEach(month => {
         const monthStart = startOfMonth(month);
         const monthEnd = endOfMonth(month);
@@ -168,7 +175,7 @@ export async function GET(req: NextRequest) {
         const revenue = paymentsInMonth.reduce((sum, p) => sum + p.amount, 0);
         
         chartData.push({
-          name: format(month, 'MMM'), // Jan
+          name: timeSpan === 'all' ? format(month, 'MMM yyyy') : format(month, 'MMM'),
           revenue,
           appointments: appsInMonth.length,
           dateStart: monthStart.toISOString(),

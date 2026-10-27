@@ -170,6 +170,7 @@ export default function DashboardPage() {
     week: "This Week",
     month: "This Month",
     '6months': "Last 6 Months",
+    all: "All Time",
     custom: "Custom Date",
     customMonth: "Custom Month"
   };
@@ -184,7 +185,7 @@ export default function DashboardPage() {
         
         <div className="flex items-center gap-3 flex-wrap">
           <div className="bg-white border border-neutral-200 rounded-lg shadow-sm flex overflow-hidden">
-            {['today', 'week', 'month', '6months'].map((span) => (
+            {['today', 'week', 'month', '6months', 'all'].map((span) => (
               <button
                 key={span}
                 onClick={() => setTimeSpan(span)}
@@ -192,7 +193,7 @@ export default function DashboardPage() {
                   timeSpan === span 
                     ? 'bg-amber-500 text-white' 
                     : 'text-neutral-600 hover:bg-neutral-50'
-                } ${span !== '6months' ? 'border-r border-neutral-200' : ''}`}
+                } ${span !== 'all' ? 'border-r border-neutral-200' : ''}`}
               >
                 {timeSpanLabels[span]}
               </button>
