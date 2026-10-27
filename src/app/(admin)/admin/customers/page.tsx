@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Search, Plus, Download, User, Calendar, MapPin, Phone, Mail, Trash2 } from "lucide-react";
 import * as XLSX from 'xlsx';
+import { format } from "date-fns";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
@@ -68,15 +69,15 @@ export default function CustomersPage() {
       'Phone': c.phone,
       'Email': c.email || 'N/A',
       'Gender': c.gender || 'N/A',
-      'DOB': c.dob ? new Date(c.dob).toLocaleDateString() : 'N/A',
+      'DOB': c.dob ? format(new Date(c.dob), 'dd/MM/yyyy') : 'N/A',
       'Address': c.address || 'N/A',
       'Visits': c.visitCount,
-      'Last Visit': c.appointments?.length > 0 ? new Date(c.appointments[0].date).toLocaleDateString() : 'Never',
+      'Last Visit': c.appointments?.length > 0 ? format(new Date(c.appointments[0].date), 'dd/MM/yyyy') : 'Never',
       'Notes': c.notes || ''
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Customers");
-    XLSX.writeFile(wb, `Customers_Export_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
+    XLSX.writeFile(wb, `Customers_Export_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -187,7 +188,7 @@ export default function CustomersPage() {
                           <div className="font-medium text-neutral-900">{customer.name}</div>
                           <div className="text-xs text-neutral-500 flex items-center mt-0.5">
                             {customer.gender && <span className="mr-2">{customer.gender}</span>}
-                            {customer.dob && <span>{new Date(customer.dob).toLocaleDateString()}</span>}
+                            {customer.dob && <span>DOB: {format(new Date(customer.dob), 'dd MMM yyyy')}</span>}
                           </div>
                         </div>
                       </div>
@@ -201,9 +202,9 @@ export default function CustomersPage() {
                         {customer.visitCount} visits
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-neutral-600">
+                    <td className="px-6 py-4 text-neutral-600 font-medium">
                       {customer.appointments?.length > 0 
-                        ? new Date(customer.appointments[0].date).toLocaleDateString() 
+                        ? format(new Date(customer.appointments[0].date), 'dd MMM yyyy') 
                         : 'Never'}
                     </td>
                     <td className="px-6 py-4 text-right flex justify-end items-center gap-3">
@@ -354,19 +355,24 @@ export default function CustomersPage() {
                   {customerHistory.map((apt: any) => (
                     <div key={apt.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                       <div className="flex gap-4">
-                        <div className="bg-white border border-neutral-200 rounded-lg p-3 flex flex-col items-center justify-center min-w-[70px]">
-                          <span className="text-xs text-neutral-500 uppercase font-semibold">{new Date(apt.date).toLocaleDateString('en-US', { month: 'short' })}</span>
-                          <span className="text-xl font-bold text-neutral-900">{new Date(apt.date).getDate()}</span>
-                          <span className="text-xs text-neutral-500">{new Date(apt.date).getFullYear()}</span>
+                        <div className="bg-white border border-neutral-200 rounded-xl p-3 flex flex-col items-center justify-center min-w-[72px] shadow-xs">
+                          <span className="text-2xl font-bold text-neutral-900 leading-none">{format(new Date(apt.date), 'dd')}</span>
+                          <span className="text-xs text-amber-700 font-semibold uppercase mt-1">{format(new Date(apt.date), 'MMM')}</span>
+                          <span className="text-[11px] text-neutral-400 mt-0.5">{format(new Date(apt.date), 'yyyy')}</span>
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-neutral-900">{apt.service?.name || "Service"}</span>
-                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-200 text-neutral-700">{apt.status}</span>
+                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-neutral-200 text-neutral-700">{apt.status}</span>
                           </div>
                           <div className="text-sm text-neutral-600 flex flex-col gap-1">
-                            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {apt.timeSlot} ({apt.duration} mins)</span>
-                            <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Stylist: {apt.staff?.name || "Any"}</span>
+                            <span className="flex items-center gap-1.5 font-medium text-neutral-700">
+                              <Calendar className="h-3.5 w-3.5 text-amber-500" /> 
+                              {format(new Date(apt.date), 'dd MMMM yyyy')} • {apt.timeSlot} ({apt.duration} mins)
+                            </span>
+                            <span className="flex items-center gap-1.5 text-xs text-neutral-500">
+                              <User className="h-3.5 w-3.5" /> Stylist: {apt.staff?.name || "Any"}
+                            </span>
                           </div>
                         </div>
                       </div>

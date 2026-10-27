@@ -527,9 +527,9 @@ export default function StaffPage() {
                       <div key={apt.id} className="bg-neutral-50 hover:bg-neutral-100/80 transition-colors border border-neutral-200 rounded-xl p-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                         <div className="flex gap-4">
                           <div className="bg-white border border-neutral-200 rounded-lg p-3 flex flex-col items-center justify-center min-w-[70px] shadow-xs">
-                            <span className="text-xs text-neutral-500 uppercase font-semibold">{new Date(apt.date).toLocaleDateString('en-US', { month: 'short' })}</span>
-                            <span className="text-xl font-bold text-neutral-900">{new Date(apt.date).getDate()}</span>
-                            <span className="text-xs text-neutral-500">{new Date(apt.date).getFullYear()}</span>
+                            <span className="text-xl font-bold text-neutral-900 leading-none">{format(new Date(apt.date), 'dd')}</span>
+                            <span className="text-xs text-amber-700 font-semibold uppercase mt-1">{format(new Date(apt.date), 'MMM')}</span>
+                            <span className="text-[11px] text-neutral-400 mt-0.5">{format(new Date(apt.date), 'yyyy')}</span>
                           </div>
                           <div>
                             <div className="flex items-center gap-2 mb-1">
@@ -541,7 +541,7 @@ export default function StaffPage() {
                               </span>
                             </div>
                             <div className="text-xs text-neutral-600 flex flex-col gap-1">
-                              <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-neutral-400" /> {apt.timeSlot} ({apt.duration} mins)</span>
+                              <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-neutral-400" /> {format(new Date(apt.date), 'dd MMMM yyyy')} • {apt.timeSlot} ({apt.duration} mins)</span>
                               <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-neutral-400" /> Client: {apt.customer?.name || "Walk-in"} ({apt.customer?.phone || ""})</span>
                             </div>
                           </div>
