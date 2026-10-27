@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
       include: {
         customer: true,
         service: true,
-        staff: true
+        staff: true,
+        payment: true
       },
       orderBy: [
         { date: 'asc' },
