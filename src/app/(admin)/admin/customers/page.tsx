@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Plus, Download, User, Calendar, MapPin, Phone, Mail, Trash2 } from "lucide-react";
+import { Search, Plus, Download, User, Calendar, MapPin, Phone, Mail, Trash2, Edit2, AlertCircle } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { format } from "date-fns";
 
@@ -10,6 +10,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
   const [historyModal, setHistoryModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [customerHistory, setCustomerHistory] = useState([]);
@@ -43,6 +44,47 @@ export default function CustomersPage() {
     notes: "",
     membershipYears: ""
   });
+
+  const openAddModal = () => {
+    setEditingCustomer(null);
+    setFormData({
+      name: "",
+      phone: "",
+      email: "",
+      gender: "",
+      dob: "",
+      address: "",
+      notes: "",
+      membershipYears: ""
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (c: any) => {
+    setEditingCustomer(c);
+    setFormData({
+      name: c.name || "",
+      phone: c.phone || "",
+      email: c.email || "",
+      gender: c.gender || "",
+      dob: c.dob ? format(new Date(c.dob), 'yyyy-MM-dd') : "",
+      address: c.address || "",
+      notes: c.notes || "",
+      membershipYears: c.membershipYears ? String(c.membershipYears) : ""
+    });
+    setShowModal(true);
+  };
+
+  const handlePhoneChange = (val: string) => {
+    let digits = val.replace(/\D/g, '');
+    if (digits.length > 10 && digits.startsWith('91')) {
+      digits = digits.slice(2);
+    } else if (digits.length > 10 && digits.startsWith('0')) {
+      digits = digits.slice(1);
+    }
+    digits = digits.slice(0, 10);
+    setFormData(prev => ({ ...prev, phone: digits }));
+  };
 
   useEffect(() => {
     fetchCustomers();
@@ -82,22 +124,35 @@ export default function CustomersPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name.trim()) {
+      alert("Customer name is required");
+      return;
+    }
+    if (formData.phone.length !== 10) {
+      alert("Please enter a valid 10-digit mobile number");
+      return;
+    }
     try {
-      const res = await fetch("/api/admin/customers", {
-        method: "POST",
+      const url = editingCustomer ? `/api/admin/customers/${editingCustomer.id}` : "/api/admin/customers";
+      const method = editingCustomer ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
         setShowModal(false);
+        setEditingCustomer(null);
         setFormData({ name: "", phone: "", email: "", gender: "", dob: "", address: "", notes: "", membershipYears: "" });
         fetchCustomers();
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to add customer");
+        alert(err.error || "Failed to save customer");
       }
     } catch (error) {
-      console.error("Error creating customer", error);
+      console.error("Error saving customer", error);
+      alert("An unexpected error occurred while saving customer");
     }
   };
 
@@ -133,7 +188,7 @@ export default function CustomersPage() {
             Export
           </button>
           <button 
-            onClick={() => setShowModal(true)}
+            onClick={openAddModal}
             className="flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-neutral-900 font-medium rounded-lg transition-colors shadow-sm"
           >
             <Plus className="h-5 w-5 mr-2" />
@@ -182,7 +237,7 @@ export default function CustomersPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold mr-3">
-                          {customer.name.charAt(0).toUpperCase()}
+                          {customer.name?.charAt(0)?.toUpperCase() || 'C'}
                         </div>
                         <div>
                           <div className="font-medium text-neutral-900">{customer.name}</div>
@@ -207,10 +262,17 @@ export default function CustomersPage() {
                         ? format(new Date(customer.appointments[0].date), 'dd MMM yyyy') 
                         : 'Never'}
                     </td>
-                    <td className="px-6 py-4 text-right flex justify-end items-center gap-3">
+                    <td className="px-6 py-4 text-right flex justify-end items-center gap-2">
+                      <button 
+                        onClick={() => openEditModal(customer)}
+                        className="p-1.5 text-neutral-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        title="Edit Customer"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
                       <button 
                         onClick={() => openHistoryModal(customer)}
-                        className="text-amber-600 hover:text-amber-700 font-medium text-sm transition-colors"
+                        className="text-amber-600 hover:text-amber-700 font-medium text-sm transition-colors px-2 py-1 hover:bg-amber-50 rounded-lg"
                       >
                         View History
                       </button>
@@ -230,110 +292,160 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-neutral-900">Add New Customer</h2>
-              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-neutral-600">✕</button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Full Name *</label>
-                  <input 
-                    type="text" required
-                    value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
+      {showModal && (() => {
+        const duplicateCustomer = formData.phone.length === 10 
+          ? customers.find((c: any) => c.phone === formData.phone && (!editingCustomer || c.id !== editingCustomer.id)) 
+          : null;
+
+        return (
+          <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-neutral-900">
+                    {editingCustomer ? "Edit Customer Profile" : "Add New Customer"}
+                  </h2>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    {editingCustomer ? "Update client contact information and preferences" : "Fill in customer details to register them in salon records"}
+                  </p>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Mobile Number *</label>
-                  <input 
-                    type="tel" required
-                    value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Email Address</label>
-                  <input 
-                    type="email"
-                    value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Gender</label>
-                  <select 
-                    value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Date of Birth</label>
-                  <input 
-                    type="date"
-                    value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-neutral-700">Membership (Optional)</label>
-                  <select 
-                    value={formData.membershipYears} onChange={e => setFormData({...formData, membershipYears: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none bg-white"
-                  >
-                    <option value="">None</option>
-                    <option value="1">1 Year</option>
-                    <option value="2">2 Years</option>
-                    <option value="3">3 Years</option>
-                    <option value="5">5 Years</option>
-                  </select>
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-sm font-medium text-neutral-700">Address</label>
-                  <input 
-                    type="text"
-                    value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
-                  />
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-sm font-medium text-neutral-700">Internal Notes</label>
-                  <textarea 
-                    rows={3}
-                    value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none resize-none"
-                  ></textarea>
-                </div>
+                <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-neutral-600">✕</button>
               </div>
               
-              <div className="mt-6 flex justify-end gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  className="px-4 py-2 bg-amber-500 text-neutral-900 rounded-lg hover:bg-amber-600 transition-colors font-medium"
-                >
-                  Save Customer
-                </button>
-              </div>
-            </form>
+              <form onSubmit={handleSubmit} className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {duplicateCustomer && (
+                    <div className="md:col-span-2 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-900">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Customer <strong>{(duplicateCustomer as any).name}</strong> is already registered with mobile <strong>{formData.phone}</strong>.</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => openEditModal(duplicateCustomer)}
+                        className="px-2.5 py-1 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 transition-colors shrink-0"
+                      >
+                        Edit This Customer
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-neutral-700">Full Name *</label>
+                    <input 
+                      type="text" required
+                      placeholder="e.g. Rahul Sharma"
+                      value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-neutral-700">Mobile Number *</label>
+                    <div className="relative flex rounded-lg shadow-xs">
+                      <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-neutral-300 bg-neutral-100 text-neutral-600 font-semibold text-sm select-none">
+                        +91
+                      </span>
+                      <input 
+                        type="tel" 
+                        required
+                        inputMode="numeric"
+                        pattern="[0-9]{10}"
+                        maxLength={10}
+                        placeholder="9876543210"
+                        value={formData.phone} 
+                        onChange={e => handlePhoneChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-r-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none font-medium tracking-wide text-neutral-900"
+                      />
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] text-neutral-400 mt-0.5">
+                      <span>10-digit Indian mobile number</span>
+                      <span className={formData.phone.length === 10 ? "text-green-600 font-semibold" : "text-neutral-400"}>
+                        {formData.phone.length}/10
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-neutral-700">Email Address</label>
+                    <input 
+                      type="email"
+                      placeholder="name@example.com"
+                      value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-neutral-700">Gender</label>
+                    <select 
+                      value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-neutral-700">Date of Birth</label>
+                    <input 
+                      type="date"
+                      value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-neutral-700">Membership (Optional)</label>
+                    <select 
+                      value={formData.membershipYears} onChange={e => setFormData({...formData, membershipYears: e.target.value})}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none bg-white"
+                    >
+                      <option value="">None</option>
+                      <option value="1">1 Year</option>
+                      <option value="2">2 Years</option>
+                      <option value="3">3 Years</option>
+                      <option value="5">5 Years</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-sm font-medium text-neutral-700">Address</label>
+                    <input 
+                      type="text"
+                      placeholder="Street address or area"
+                      value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-sm font-medium text-neutral-700">Internal Notes</label>
+                    <textarea 
+                      rows={3}
+                      placeholder="Preferences, allergies, hair history..."
+                      value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none resize-none"
+                    ></textarea>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-4 py-2 bg-amber-500 text-neutral-900 rounded-lg hover:bg-amber-600 transition-colors font-medium"
+                  >
+                    {editingCustomer ? "Update Customer" : "Save Customer"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       {historyModal && selectedCustomer && (
         <div className="fixed inset-0 bg-neutral-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-3xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">

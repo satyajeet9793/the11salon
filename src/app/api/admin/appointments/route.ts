@@ -76,9 +76,14 @@ export async function POST(req: NextRequest) {
 
     let dobDate = customerDob ? new Date(customerDob) : null;
 
-    if (!customerId && customerName && customerPhone) {
-      let customer = await prisma.customer.findUnique({ where: { phone: customerPhone } });
+    if (!customerId && customerPhone) {
+      const cleanPhone = customerPhone.toString().trim().replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '').replace(/^0(?=\d{10}$)/, '');
+      let customer = await prisma.customer.findUnique({ where: { phone: cleanPhone } });
       if (!customer) {
+        customer = await prisma.customer.findUnique({ where: { phone: customerPhone.trim() } });
+      }
+
+      if (!customer && customerName) {
         let isMember = false;
         let membershipStartDate = null;
         let membershipEndDate = null;
@@ -93,8 +98,8 @@ export async function POST(req: NextRequest) {
 
         customer = await prisma.customer.create({ 
           data: { 
-            name: customerName, 
-            phone: customerPhone,
+            name: customerName.trim(), 
+            phone: cleanPhone || customerPhone.trim(),
             dob: dobDate,
             isMember,
             membershipStartDate,
@@ -102,16 +107,24 @@ export async function POST(req: NextRequest) {
             membershipYears: parsedYears
           } 
         });
-      } else if (dobDate) {
-        // Update DOB if provided and customer already exists
-        customer = await prisma.customer.update({
-          where: { id: customer.id },
-          data: { dob: dobDate }
-        });
+      } else if (customer) {
+        const updateData: any = {};
+        if (dobDate && !customer.dob) updateData.dob = dobDate;
+        if (customerName && customerName.trim() && customer.name !== customerName.trim()) {
+          updateData.name = customerName.trim();
+        }
+        if (Object.keys(updateData).length > 0) {
+          customer = await prisma.customer.update({
+            where: { id: customer.id },
+            data: updateData
+          });
+        }
       }
-      customerId = customer.id;
+
+      if (customer) {
+        customerId = customer.id;
+      }
     } else if (customerId && dobDate) {
-      // Update DOB if customerId is explicitly provided
       await prisma.customer.update({
         where: { id: customerId },
         data: { dob: dobDate }

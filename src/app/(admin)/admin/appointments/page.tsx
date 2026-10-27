@@ -140,15 +140,53 @@ export default function AppointmentsPage() {
     }
   };
 
+  const handleCustomerPhoneChange = (val: string) => {
+    let digits = val.replace(/\D/g, '');
+    if (digits.length > 10 && digits.startsWith('91')) {
+      digits = digits.slice(2);
+    } else if (digits.length > 10 && digits.startsWith('0')) {
+      digits = digits.slice(1);
+    }
+    digits = digits.slice(0, 10);
+
+    // If 10 digits, check if customer already exists and autofill
+    if (digits.length === 10) {
+      const match = customers.find(c => c.phone && c.phone.replace(/\D/g, '').slice(-10) === digits);
+      if (match) {
+        setFormData(prev => ({
+          ...prev,
+          customerPhone: digits,
+          customerName: match.name,
+          customerDob: match.dob ? match.dob.split('T')[0] : prev.customerDob
+        }));
+        setShowPhoneSuggestions(false);
+        return;
+      }
+    }
+
+    setFormData(prev => ({ ...prev, customerPhone: digits }));
+    setShowPhoneSuggestions(true);
+  };
+
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.serviceIds.length === 0) {
       alert("Please select at least one service.");
       return;
     }
+    if (formData.customerPhone.length !== 10) {
+      alert("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!formData.customerName.trim()) {
+      alert("Please enter customer name.");
+      return;
+    }
     try {
       const payload = {
         ...formData,
+        customerPhone: formData.customerPhone.trim(),
+        customerName: formData.customerName.trim(),
         staffId: formData.staffId || null
       };
 
@@ -403,71 +441,100 @@ export default function AppointmentsPage() {
                 {/* Customer Section */}
                 <div className="md:col-span-2 space-y-4 bg-white/40 p-5 rounded-2xl border border-white/60 shadow-sm">
                   <h3 className="text-sm font-medium text-neutral-700 uppercase tracking-wider mb-2">Customer Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1.5 relative">
-                      <label className="text-sm font-medium text-neutral-600">Phone *</label>
+                      <label className="text-sm font-medium text-neutral-600">Mobile Number *</label>
+                      <div className="relative flex rounded-xl shadow-inner bg-white/60 backdrop-blur-sm border border-white/60 overflow-hidden focus-within:ring-2 focus-within:ring-amber-500/30 focus-within:border-amber-400">
+                        <span className="inline-flex items-center px-3 bg-neutral-100/70 text-neutral-600 font-semibold text-sm border-r border-neutral-200/50 select-none">
+                          +91
+                        </span>
+                        <input 
+                          type="tel" 
+                          required
+                          inputMode="numeric"
+                          pattern="[0-9]{10}"
+                          maxLength={10}
+                          placeholder="Search or enter 10 digits"
+                          value={formData.customerPhone} 
+                          onFocus={() => setShowPhoneSuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowPhoneSuggestions(false), 250)}
+                          onChange={e => handleCustomerPhoneChange(e.target.value)}
+                          className="w-full px-3 py-3 bg-transparent outline-none font-medium text-neutral-800 placeholder:font-normal placeholder:text-neutral-400 tracking-wide text-sm"
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-neutral-400 px-1">
+                        <span>10-digit number</span>
+                        <span className={formData.customerPhone.length === 10 ? "text-green-600 font-semibold" : "text-neutral-400"}>
+                          {formData.customerPhone.length}/10
+                        </span>
+                      </div>
+                      {showPhoneSuggestions && formData.customerPhone.length >= 2 && (() => {
+                        const cleanQuery = formData.customerPhone.replace(/\D/g, '');
+                        const matchingCustomers = customers.filter(c => {
+                          if (!c || !c.phone) return false;
+                          const cleanP = c.phone.replace(/\D/g, '');
+                          const cleanN = (c.name || '').toLowerCase();
+                          return cleanP.includes(cleanQuery) || cleanN.includes(formData.customerPhone.toLowerCase());
+                        });
+
+                        return (
+                          <div className="absolute top-[calc(100%+0.25rem)] left-0 right-0 bg-white border border-neutral-200 rounded-xl shadow-2xl z-50 max-h-52 overflow-y-auto">
+                            {matchingCustomers.length > 0 ? (
+                              matchingCustomers.map(c => (
+                                <div 
+                                  key={c.id || c.phone}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    const digits = (c.phone || '').replace(/\D/g, '').slice(-10);
+                                    setFormData(prev => ({ 
+                                      ...prev, 
+                                      customerPhone: digits, 
+                                      customerName: c.name || "",
+                                      customerDob: c.dob ? c.dob.split('T')[0] : prev.customerDob
+                                    }));
+                                    setShowPhoneSuggestions(false);
+                                  }}
+                                  className="px-3.5 py-2.5 hover:bg-amber-50 cursor-pointer border-b border-neutral-100 last:border-0 transition-colors flex items-center justify-between"
+                                >
+                                  <div>
+                                    <div className="font-semibold text-neutral-900 text-sm">{c.name}</div>
+                                    <div className="text-xs text-neutral-500 flex items-center gap-1.5 mt-0.5">
+                                      <span>+91 {c.phone}</span>
+                                      {c.dob && <span>• DOB: {format(new Date(c.dob), 'dd MMM yyyy')}</span>}
+                                    </div>
+                                  </div>
+                                  <span className="text-[11px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full">
+                                    Existing
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="px-4 py-3 text-xs text-neutral-500 bg-neutral-50">
+                                New customer (will be automatically registered)
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-neutral-600">Customer Name *</label>
                       <input 
                         type="text" required
-                        placeholder="Search or enter new phone"
-                        value={formData.customerPhone} 
-                        onFocus={() => setShowPhoneSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowPhoneSuggestions(false), 200)}
-                        onChange={e => {
-                          setFormData({...formData, customerPhone: e.target.value});
-                          setShowPhoneSuggestions(true);
-                        }}
-                        className="w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/60 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 outline-none transition-all font-medium text-neutral-700 placeholder:font-normal placeholder:text-neutral-400 shadow-inner"
+                        placeholder="e.g. Rahul Sharma"
+                        value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})}
+                        className="w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/60 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 outline-none transition-all font-medium text-neutral-700 placeholder:font-normal placeholder:text-neutral-400 shadow-inner text-sm"
                       />
-                      {showPhoneSuggestions && formData.customerPhone.length >= 2 && (
-                        <div className="absolute top-[calc(100%-0.5rem)] left-0 right-0 mt-1 bg-white/90 backdrop-blur-xl border border-white/60 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto overflow-hidden">
-                          {customers
-                            .filter(c => c.phone.includes(formData.customerPhone))
-                            .length > 0 ? (
-                              customers
-                                .filter(c => c.phone.includes(formData.customerPhone))
-                                .map(c => (
-                                  <div 
-                                    key={c.phone}
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      setFormData({ 
-                                        ...formData, 
-                                        customerPhone: c.phone, 
-                                        customerName: c.name,
-                                        customerDob: c.dob ? c.dob.split('T')[0] : ""
-                                      });
-                                      setShowPhoneSuggestions(false);
-                                    }}
-                                    className="px-4 py-3 hover:bg-white cursor-pointer border-b border-neutral-100 last:border-0 transition-colors"
-                                  >
-                                    <div className="font-medium text-neutral-800">{c.phone}</div>
-                                    <div className="text-xs font-normal text-amber-600">{c.name}</div>
-                                  </div>
-                                ))
-                            ) : (
-                              <div className="px-4 py-4 text-sm font-normal text-neutral-500 bg-white/50">Will create new customer</div>
-                            )}
-                        </div>
-                      )}
                     </div>
-                    <div className="space-y-1.5 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-neutral-600">Name *</label>
-                        <input 
-                          type="text" required
-                          placeholder="Customer name"
-                          value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})}
-                          className="w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/60 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 outline-none transition-all font-medium text-neutral-700 placeholder:font-normal placeholder:text-neutral-400 shadow-inner"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-neutral-600">Birth Date (Optional)</label>
-                        <input 
-                          type="date"
-                          value={formData.customerDob} onChange={e => setFormData({...formData, customerDob: e.target.value})}
-                          className="w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/60 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 outline-none transition-all font-medium text-neutral-700 shadow-inner"
-                        />
-                      </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-neutral-600">Birth Date (Optional)</label>
+                      <input 
+                        type="date"
+                        value={formData.customerDob} onChange={e => setFormData({...formData, customerDob: e.target.value})}
+                        className="w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/60 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 outline-none transition-all font-medium text-neutral-700 shadow-inner text-sm"
+                      />
                     </div>
                   </div>
                 </div>

@@ -10,20 +10,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const cleanPhone = phone.toString().trim().replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '').replace(/^0(?=\d{10}$)/, '');
+
     // 1. Find or create the customer
     let customer = await prisma.customer.findUnique({
-      where: { phone }
+      where: { phone: cleanPhone }
     });
 
     if (!customer) {
       customer = await prisma.customer.create({
-        data: { name, phone }
+        data: { name: name.trim(), phone: cleanPhone }
       });
     } else {
-      if (customer.name !== name) {
+      if (customer.name !== name.trim()) {
         customer = await prisma.customer.update({
           where: { id: customer.id },
-          data: { name }
+          data: { name: name.trim() }
         });
       }
     }

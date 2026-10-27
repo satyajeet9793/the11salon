@@ -261,14 +261,29 @@ export default function BookingPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm text-brown-dark dark:text-neutral-300 font-bold mb-2">Phone Number *</label>
-                  <input 
-                    type="tel" 
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full bg-white dark:bg-neutral-800 border border-brown-dark/10 dark:border-white/10 rounded px-4 py-3 text-brown-dark dark:text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold shadow-sm" 
-                    placeholder="+91" 
-                  />
+                  <label className="block text-sm text-brown-dark dark:text-neutral-300 font-bold mb-2">Mobile Number *</label>
+                  <div className="flex rounded shadow-sm">
+                    <span className="inline-flex items-center px-3 rounded-l border border-r-0 border-brown-dark/10 dark:border-white/10 bg-neutral-100 dark:bg-neutral-700 text-brown-dark dark:text-white font-semibold text-sm select-none">
+                      +91
+                    </span>
+                    <input 
+                      type="tel" 
+                      required
+                      inputMode="numeric"
+                      pattern="[0-9]{10}"
+                      maxLength={10}
+                      value={formData.phone}
+                      onChange={(e) => {
+                        let digits = e.target.value.replace(/\D/g, '');
+                        if (digits.length > 10 && digits.startsWith('91')) digits = digits.slice(2);
+                        else if (digits.length > 10 && digits.startsWith('0')) digits = digits.slice(1);
+                        setFormData({...formData, phone: digits.slice(0, 10)});
+                      }}
+                      className="w-full bg-white dark:bg-neutral-800 border border-brown-dark/10 dark:border-white/10 rounded-r px-4 py-3 text-brown-dark dark:text-white focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold tracking-wide" 
+                      placeholder="9876543210" 
+                    />
+                  </div>
+                  <span className="text-[11px] text-neutral-400 mt-1 block">Enter 10-digit mobile number ({formData.phone.length}/10)</span>
                 </div>
 
                 <div>

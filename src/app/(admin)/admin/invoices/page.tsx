@@ -470,8 +470,8 @@ export default function InvoicesPage() {
                 />
                 {showCustomerDropdown && (
                   <ul className="absolute z-10 w-full mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-48 overflow-auto">
-                     {customers.filter((c: any) => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || c.phone.includes(customerSearch)).length > 0 ? (
-                       customers.filter((c: any) => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || c.phone.includes(customerSearch)).map((c: any) => (
+                     {customers.filter((c: any) => (c.name || '').toLowerCase().includes(customerSearch.toLowerCase()) || (c.phone || '').includes(customerSearch)).length > 0 ? (
+                       customers.filter((c: any) => (c.name || '').toLowerCase().includes(customerSearch.toLowerCase()) || (c.phone || '').includes(customerSearch)).map((c: any) => (
                          <li 
                            key={c.id} 
                            className="px-3 py-2 hover:bg-amber-50 cursor-pointer text-sm"

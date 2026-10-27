@@ -57,12 +57,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Name and Phone are required" }, { status: 400 });
     }
 
+    const cleanPhone = phone.toString().trim().replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '').replace(/^0(?=\d{10}$)/, '');
+
+    if (!cleanPhone) {
+      return NextResponse.json({ error: "Please enter a valid mobile number" }, { status: 400 });
+    }
+
     const existingCustomer = await prisma.customer.findUnique({
-      where: { phone }
+      where: { phone: cleanPhone }
     });
 
     if (existingCustomer) {
-      return NextResponse.json({ error: "Customer with this phone number already exists" }, { status: 400 });
+      return NextResponse.json({ 
+        error: `Customer '${existingCustomer.name}' already exists with mobile number ${cleanPhone}`,
+        existingCustomer 
+      }, { status: 400 });
     }
 
     let isMember = false;
@@ -79,10 +88,10 @@ export async function POST(req: NextRequest) {
 
     const customer = await prisma.customer.create({
       data: {
-        name,
-        phone,
-        email,
-        gender,
+        name: name.trim(),
+        phone: cleanPhone,
+        email: email ? email.trim() : null,
+        gender: gender || null,
         dob: dob ? new Date(dob) : null,
         address,
         notes,

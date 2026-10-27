@@ -14,16 +14,16 @@ export async function createBooking(data: {
   notes: string;
 }) {
   try {
-    // 1. Find or create the customer
+    const cleanPhone = data.phone.toString().trim().replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '').replace(/^0(?=\d{10}$)/, '');
     let customer = await prisma.customer.findUnique({
-      where: { phone: data.phone },
+      where: { phone: cleanPhone },
     });
 
     if (!customer) {
       customer = await prisma.customer.create({
         data: {
-          name: data.name,
-          phone: data.phone,
+          name: data.name.trim(),
+          phone: cleanPhone || data.phone.trim(),
           email: data.email || null,
         },
       });
