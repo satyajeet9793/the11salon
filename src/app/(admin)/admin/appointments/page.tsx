@@ -13,7 +13,7 @@ export default function AppointmentsPage() {
   const [completedAptId, setCompletedAptId] = useState<string | null>(null);
   
   const [services, setServices] = useState<{id: string, name: string, price: number}[]>([]);
-  const [customers, setCustomers] = useState<{id: string, name: string, phone: string}[]>([]);
+  const [customers, setCustomers] = useState<{id: string, name: string, phone: string, dob?: string | null}[]>([]);
   const [staffList, setStaffList] = useState<{id: string, name: string}[]>([]);
   
   const [showPhoneSuggestions, setShowPhoneSuggestions] = useState(false);
@@ -38,10 +38,26 @@ export default function AppointmentsPage() {
   }, [selectedDate]);
 
   useEffect(() => {
+    fetch("/api/admin/staff")
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setStaffList(data.filter((s: any) => s.isAvailable)); })
+      .catch(err => console.error("Error loading staff:", err));
+  }, []);
+
+  useEffect(() => {
     if (showModal) {
-      fetch("/api/admin/services").then(res => res.json()).then(data => setServices(data));
-      fetch("/api/admin/customers").then(res => res.json()).then(data => setCustomers(data));
-      fetch("/api/admin/staff").then(res => res.json()).then(data => setStaffList(data.filter((s: any) => s.isAvailable)));
+      fetch("/api/admin/services")
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setServices(data); })
+        .catch(err => console.error("Error loading services:", err));
+      fetch("/api/admin/customers")
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setCustomers(data); })
+        .catch(err => console.error("Error loading customers:", err));
+      fetch("/api/admin/staff")
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setStaffList(data.filter((s: any) => s.isAvailable)); })
+        .catch(err => console.error("Error loading staff:", err));
     }
   }, [showModal]);
 
@@ -58,6 +74,21 @@ export default function AppointmentsPage() {
       console.error("Failed to fetch appointments", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateStaff = async (id: string, staffId: string) => {
+    try {
+      const res = await fetch(`/api/admin/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId: staffId || null })
+      });
+      if (res.ok) {
+        fetchAppointments(selectedDate);
+      }
+    } catch (error) {
+      console.error("Failed to update staff", error);
     }
   };
 
@@ -301,11 +332,20 @@ export default function AppointmentsPage() {
                           <User className="h-5 w-5 text-neutral-400" />
                         )}
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Assigned Staff</p>
-                        <p className={`font-medium ${apt.staff ? 'text-neutral-800' : 'text-neutral-500'}`}>
-                          {apt.staff?.name || 'Any Available Staff'}
-                        </p>
+                        <select
+                          value={apt.staffId || ""}
+                          onChange={(e) => updateStaff(apt.id, e.target.value)}
+                          className={`mt-0.5 w-full text-sm font-medium bg-transparent border-b border-dashed border-neutral-300 focus:border-amber-500 outline-none cursor-pointer py-0.5 ${
+                            apt.staff ? 'text-neutral-800' : 'text-neutral-500'
+                          }`}
+                        >
+                          <option value="">Any Available Staff</option>
+                          {staffList.map((s: any) => (
+                            <option key={s.id} value={s.id}>{s.name} ({s.role || 'Staff'})</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </div>

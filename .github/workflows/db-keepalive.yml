@@ -1,0 +1,35 @@
+name: Keep Supabase Database Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 04:00 UTC (keeps Supabase from pausing)
+    - cron: '0 4 */3 * *'
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase PostgreSQL Database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres.brrxznyqadwcnsaiwzij:the11salonkolhapur@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true' }}
+        run: |
+          npm install pg
+          node -e "
+            const { Client } = require('pg');
+            const client = new Client({ connectionString: process.env.DATABASE_URL });
+            client.connect()
+              .then(() => {
+                console.log('Connected to Supabase PostgreSQL database.');
+                return client.query('SELECT 1 as alive;');
+              })
+              .then((res) => {
+                console.log('Ping successful! Result:', res.rows);
+                console.log('✅ Supabase project activity recorded. The database will not pause.');
+              })
+              .catch((err) => {
+                console.error('❌ Ping error:', err.message);
+                process.exit(1);
+              })
+              .finally(() => client.end());
+          "

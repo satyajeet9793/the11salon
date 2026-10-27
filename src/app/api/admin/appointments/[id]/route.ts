@@ -13,10 +13,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const resolvedParams = await params;
     const { id } = resolvedParams;
     const body = await req.json();
-    const { status, arrivalTime, serviceStartTime, serviceEndTime } = body;
+    const { status, arrivalTime, serviceStartTime, serviceEndTime, staffId } = body;
 
     const updateData: any = {};
     if (status) updateData.status = status;
+    if (staffId !== undefined) updateData.staffId = staffId || null;
     if (arrivalTime) updateData.arrivalTime = new Date(arrivalTime);
     if (serviceStartTime) updateData.serviceStartTime = new Date(serviceStartTime);
     if (serviceEndTime) updateData.serviceEndTime = new Date(serviceEndTime);

@@ -188,6 +188,10 @@ export default function InvoicesPage() {
     }
     doc.setFont('times', 'normal');
 
+    const serviceDesc = invoice.appointment?.service?.name 
+      ? `${invoice.appointment.service.name}${invoice.appointment?.staff?.name ? ` (Stylist: ${invoice.appointment.staff.name})` : ''}` 
+      : "Premium Salon Service";
+
     // --- Services Table ---
     autoTable(doc, {
       startY: 100,
@@ -195,7 +199,7 @@ export default function InvoicesPage() {
       head: [['Description', 'Payment Method', 'Qty', 'Unit Price', 'Total']],
       body: [
         [
-          invoice.appointment?.service?.name || "Premium Salon Service",
+          serviceDesc,
           invoice.method || "CASH",
           '1',
           `Rs. ${invoice.amount.toLocaleString()}`,
@@ -385,6 +389,9 @@ export default function InvoicesPage() {
                     <td className="px-6 py-4">
                       <div className="font-medium text-neutral-900">{invoice.appointment?.customer?.name || "Walk-in"}</div>
                       <div className="text-xs text-neutral-500">{invoice.appointment?.customer?.phone || ""}</div>
+                      {invoice.appointment?.staff?.name && (
+                        <div className="text-xs text-amber-600 font-medium mt-0.5">Stylist: {invoice.appointment.staff.name}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 font-semibold text-neutral-900">
                       ₹{invoice.amount.toLocaleString()}

@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
         appointment: {
           include: {
             customer: true,
-            service: true
+            service: true,
+            staff: true
           }
         }
       }
